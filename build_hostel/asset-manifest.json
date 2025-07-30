@@ -1,0 +1,22 @@
+{
+  "files": {
+    "main.css": "/hostel/static/css/main.819be989.css",
+    "main.js": "/hostel/static/js/main.b3ef2311.js",
+    "static/js/213.dbe0eb66.chunk.js": "/hostel/static/js/213.dbe0eb66.chunk.js",
+    "static/js/455.a2ef8b95.chunk.js": "/hostel/static/js/455.a2ef8b95.chunk.js",
+    "static/js/488.a14a6384.chunk.js": "/hostel/static/js/488.a14a6384.chunk.js",
+    "static/media/hostelbg.png": "/hostel/static/media/hostelbg.205d91d6780227f78208.png",
+    "static/media/hostel-vector-26477303.jpg": "/hostel/static/media/hostel-vector-26477303.381e64146f5c62df6f43.jpg",
+    "static/media/mutkehostel.png": "/hostel/static/media/mutkehostel.ea525e6c24212d0e8c4c.png",
+    "index.html": "/hostel/index.html",
+    "main.819be989.css.map": "/hostel/static/css/main.819be989.css.map",
+    "main.b3ef2311.js.map": "/hostel/static/js/main.b3ef2311.js.map",
+    "213.dbe0eb66.chunk.js.map": "/hostel/static/js/213.dbe0eb66.chunk.js.map",
+    "455.a2ef8b95.chunk.js.map": "/hostel/static/js/455.a2ef8b95.chunk.js.map",
+    "488.a14a6384.chunk.js.map": "/hostel/static/js/488.a14a6384.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.819be989.css",
+    "static/js/main.b3ef2311.js"
+  ]
+}
