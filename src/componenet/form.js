@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 
 const Form = () => {
   const [formData, setFormData] = useState({
-    srNo: '',
+    // srNo: '',
     name: '',
     joiningDate: '',
     roomNo: '',
@@ -25,18 +25,18 @@ const Form = () => {
     }));
   };
 
-  const fetchSrNo = async () => {
-    try {
-      const response = await axios.get('http://localhost:4000/api/forms/count');
-      setFormData((prev) => ({ ...prev, srNo: response.data.nextSrNo }));
-    } catch (error) {
-      console.error("Error fetching Sr No:", error);
-    }
-  };
+  // const fetchSrNo = async () => {
+  //   try {
+  //     const response = await axios.get('http://localhost:4000/api/forms/count');
+  //     setFormData((prev) => ({ ...prev, srNo: response.data.nextSrNo }));
+  //   } catch (error) {
+  //     console.error("Error fetching Sr No:", error);
+  //   }
+  // };
 
-  useEffect(() => {
-    fetchSrNo(); // Fetch Sr No when component loads
-  }, []);
+  // useEffect(() => {
+  //   fetchSrNo(); 
+  // }, []);
 
   const navigate = useNavigate();
   const handleNavigation = (path) => {
@@ -58,17 +58,7 @@ const Form = () => {
     <>
       <h2>Tenant Form</h2>
       <form onSubmit={handleSubmit} className="form-container">
-        <div className="form-group">
-          <label htmlFor="srNo">Sr. No.</label>
-          <input
-            type="text"
-            name="srNo"
-            id="srNo"
-            value={formData.srNo} // Automatically filled
-            readOnly
-            className="form-input"
-          />
-        </div>
+       
 
         <div className="form-group">
           <label htmlFor="name">Name</label>

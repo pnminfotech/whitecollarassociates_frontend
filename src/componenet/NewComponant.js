@@ -54,6 +54,8 @@ function NewComponant() {
   const [selectedRowData, setSelectedRowData] = useState(null);
 
   const [showAddModal, setShowAddModal] = useState(false);
+const [occupiedRoomsList, setOccupiedRoomsList] = useState([]);
+
   const [newTenant, setNewTenant] = useState({
     srNo: '',
     name: '',
@@ -109,17 +111,18 @@ function NewComponant() {
   )).sort((a, b) => b - a)];
 
 
-  const fetchSrNo = async () => {
-    try {
-      const response = await axios.get(`${apiUrl}forms/count`);
-      setNewTenant(prev => ({ ...prev, srNo: response.data.nextSrNo }));
-    } catch (error) {
-      console.error("Error fetching Sr No:", error);
-    }
-  };
+  // const fetchSrNo = async () => {
+  //   try {
+  //     const response = await axios.get(`${apiUrl}forms/count`);
+  //     setNewTenant(prev => ({ ...prev, srNo: response.data.nextSrNo }));
+  //   } catch (error) {
+  //     console.error("Error fetching Sr No:", error);
+  //   }
+  // };
 
   const openAddModal = () => {
-    fetchSrNo();
+    // fetchSrNo();
+
     setShowAddModal(true);
   };
 
@@ -291,6 +294,17 @@ function NewComponant() {
 
 
 
+useEffect(() => {
+  axios.get('http://localhost:4000/api/available-rooms')
+    .then(response => {
+      if (response.data.occupiedRooms) {
+        setOccupiedRoomsList(response.data.occupiedRooms);
+      }
+    })
+    .catch(error => {
+      console.error("Error fetching occupied rooms:", error);
+    });
+}, []);
 
 
 
@@ -334,34 +348,35 @@ function NewComponant() {
 
 
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+const handleChange = (e) => {
+  const { name, value } = e.target;
 
-    if (name === 'wing') {
-      setWing(value);
-      setFloor('');  // reset floor and roomNo when wing changes
-      setRoomNo('');
-    } else if (name === 'floor') {
-      setFloor(value);
-      setRoomNo(''); // reset roomNo when floor changes
-    } else if (name === 'roomNo') {
-      setRoomNo(value);
-    }
-  };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  if (name === 'wing') {
+    setWing(value);
+    setFloor('');
+    setRoomNo('');
+    setNewTenant(prev => ({
+      ...prev,
+      wing: value,
+      floorNo: '',
+      roomNo: ''
+    }));
+  } else if (name === 'floor') {
+    setFloor(value);
+    setRoomNo('');
+    setNewTenant(prev => ({
+      ...prev,
+      floorNo: value,
+      roomNo: ''
+    }));
+  } else if (name === 'roomNo') {
+    setRoomNo(value);
+    setNewTenant(prev => ({
+      ...prev,
+      roomNo: value
+    }));
+  }
+};
 
   const handleAddTenant = async () => {
     if (!newTenant.name || !newTenant.address || !newTenant.joiningDate) {
@@ -378,6 +393,7 @@ function NewComponant() {
       const formData = new FormData();
 
       // ✅ Append all fields except 'adharno' and 'adharFile'
+      const { srNo, ...rest } = newTenant; // 🔥 EXCLUDE srNo
       for (const key in newTenant) {
         if (
 
@@ -425,12 +441,18 @@ function NewComponant() {
       } else {
         console.error("Axios setup error:", error.message);
       }
+let errMsg = "Failed to add tenant.";
 
-      const errMsg =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        error.message;
-      alert("Failed to add tenant: " + errMsg);
+if (error.response?.data?.error) {
+  errMsg = error.response.data.error;
+} else if (error.response?.data?.message) {
+  errMsg = error.response.data.message;
+} else if (error.message) {
+  errMsg = error.message;
+}
+
+alert(errMsg);
+
     }
   };
 
@@ -477,7 +499,7 @@ function NewComponant() {
 
   const handleDownloadExcel = () => {
     const sheetData = formData.map(item => ({
-      SrNo: item.srNo,
+      // SrNo: item.srNo,
       Name: item.name,
       Phone: item.phoneNo,
 
@@ -588,34 +610,34 @@ function NewComponant() {
   };
 
 
-  // const handleLeave = (tenant) => {
-  //   setCurrentLeaveId(tenant._id);
-  //   setCurrentLeaveName(tenant.name);
-  //   setShowLeaveModal(true);
-  // };
-  // const confirmLeave = async () => {
-  //   if (!selectedLeaveDate) {
-  //     alert("Please select a leave date.");
-  //     return;
-  //   }
+  const handleLeave = (tenant) => {
+    setCurrentLeaveId(tenant._id);
+    setCurrentLeaveName(tenant.name);
+    setShowLeaveModal(true);
+  };
+  const confirmLeave = async () => {
+    if (!selectedLeaveDate) {
+      alert("Please select a leave date.");
+      return;
+    }
 
-  //   try {
-  //     const response = await axios.post(`${apiUrl}leave`, {
-  //       formId: currentLeaveId,
-  //       leaveDate: selectedLeaveDate,
-  //     });
+    try {
+      const response = await axios.post(`${apiUrl}leave`, {
+        formId: currentLeaveId,
+        leaveDate: selectedLeaveDate,
+      });
 
-  //     if (response.data?.message) {
-  //       alert(response.data.message);
-  //       setLeaveDates((prev) => ({ ...prev, [currentLeaveId]: selectedLeaveDate }));
-  //       setShowLeaveModal(false);
-  //     } else {
-  //       alert("Failed to mark leave.");
-  //     }
-  //   } catch (err) {
-  //     console.error("Error setting leave:", err);
-  //   }
-  // };
+      if (response.data?.message) {
+        alert(response.data.message);
+        setLeaveDates((prev) => ({ ...prev, [currentLeaveId]: selectedLeaveDate }));
+        setShowLeaveModal(false);
+      } else {
+        alert("Failed to mark leave.");
+      }
+    } catch (err) {
+      console.error("Error setting leave:", err);
+    }
+  };
 
   const getDueMonths = (rents = [], joiningDateStr) => {
     if (!joiningDateStr) return [];
@@ -1470,7 +1492,7 @@ function NewComponant() {
                     <div className="container-fluid">
                       <div className="row g-3">
                         {[
-                          { label: 'Sr No', key: 'srNo', type: 'text', readOnly: true },
+                          // { label: 'Sr No', key: 'srNo', type: 'text', readOnly: true },
                           { label: 'Name', key: 'name' },
                           { label: 'Family Members', key: 'members', type: 'number' },
 
@@ -1611,40 +1633,43 @@ function NewComponant() {
                   </div>
 
                   {/* Room Dropdown */}
-                  <div className="col-12 col-md-6">
-                    <label style={{ fontWeight: '600', display: 'block', marginBottom: '0.25rem' }}>
-                      Select Room
-                    </label>
-                    <select
-                      name="roomNo"
-                      className="form-select"
-                      value={newTenant.roomNo || ''}
-                      onChange={(e) =>
-                        setNewTenant({ ...newTenant, roomNo: e.target.value })
-                      }
-                      disabled={!newTenant.floorNo}
-                    >
-                      <option value="">Select Room</option>
-                      {roomData
-                        .filter(
-                          (room) =>
-                            room.wing === newTenant.wing &&
-                            String(room.floor) === newTenant.floorNo &&
-                            !existingTenants.some(
-                              (tenant) =>
-                                tenant.roomNo === room.roomNo &&
-                                tenant.wing === room.wing &&
-                                String(tenant.floorNo) === String(room.floorNo)
-                            )
-                        )
-                        .map((room) => (
-                          <option key={room.roomNo} value={room.roomNo}>
-                            {room.roomNo}
-                          </option>
-                        ))}
-                    </select>
+                 {/* Room Dropdown */}
+<div className="col-12 col-md-6">
+  <label style={{ fontWeight: '600', display: 'block', marginBottom: '0.25rem' }}>
+    Select Room
+  </label>
+  <select
+    className="form-control"
+    name="roomNo"
+    value={newTenant.roomNo}
+    onChange={handleChange}
+    required
+  >
+    <option value="">Select Room</option>
 
-                  </div>
+    {roomData
+      .filter((room) => {
+        const isSameWing = room.wing === newTenant.wing;
+        const isSameFloor = String(room.floor) === String(newTenant.floorNo);
+
+        // 🔥 Construct room ID like in API: "1-A101"
+        const roomId = `${room.floor}-${room.roomNo}`;
+
+        const isOccupied = occupiedRoomsList.includes(roomId);
+console.log("Checking room:", `${room.floor}-${room.roomNo}`, "Occupied?", isOccupied);
+
+        return isSameWing && isSameFloor && !isOccupied;
+      })
+      .map((room) => (
+        <option key={room.roomNo} value={room.roomNo}>
+          {room.roomNo}
+        </option>
+      ))}
+  </select>
+</div>
+
+
+
 
 
                   {/* Footer */}
