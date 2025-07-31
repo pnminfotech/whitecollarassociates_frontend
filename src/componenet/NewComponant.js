@@ -293,6 +293,22 @@ const [occupiedRoomsList, setOccupiedRoomsList] = useState([]);
   }, []);
 
 
+  const NewComponant = () => {
+    const navigate = useNavigate();
+
+    return (
+      <div>
+        <h1>Welcome</h1>
+
+        <button onClick={() => navigate('/TenantData')}>
+          Tenant Data
+        </button>
+      </div>
+    );
+  };
+
+
+
 
 useEffect(() => {
   axios.get('http://localhost:4000/api/available-rooms')
@@ -963,8 +979,8 @@ alert(errMsg);
             e.target.style.boxShadow = '0 2px 6px rgba(0,0,0,0.15)';
           }}
           onClick={() => {
-            setActiveTab('other');
-            navigate('/lightbillotherexpenses', { state: { tab: 'other' } });
+
+            navigate('/reports');
           }}
         >
           <FaReceipt className="me-1" />
@@ -1008,6 +1024,33 @@ alert(errMsg);
 
 
 
+        <button
+          className="btn me-2"
+          style={{
+            ...(activeTab === 'light' ? style.colorA : style.colorB),
+            transition: 'all 0.3s ease',
+            border: 'none',
+            borderRadius: '6px',
+            padding: '10px 16px',
+            fontWeight: 'bold',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+            cursor: 'pointer',
+          }}
+          onMouseOver={(e) => {
+            e.target.style.transform = 'scale(1.05)';
+            e.target.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+          }}
+          onMouseOut={(e) => {
+            e.target.style.transform = 'scale(1)';
+            e.target.style.boxShadow = '0 2px 6px rgba(0,0,0,0.15)';
+          }}
+          onClick={() => {
+            navigate('/TenantData');
+          }}
+        >
+          <FaBolt className="me-1" />
+          Tenant Data
+        </button>
 
 
 

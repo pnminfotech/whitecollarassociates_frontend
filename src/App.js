@@ -37,11 +37,19 @@ import NewComponantOriginal from './componenet/NewComponantOriginal';
 import LightBillMatrixView from './componenet/Maintanace/LightBillMatrixView';
 import LightbillOtherExpenses from './componenet/Maintanace/LightbillOtherExpenses';
 import RoomManager from './componenet/RoomManager';
+
+
+import ReportsPage from './componenet/ReportsPage';
+import TenantData from './componenet/TenantData'; // adjust path if needed
+
+
+
+
 function Layout() {
   const location = useLocation();
 
   // Define the routes where the sidebar and dashboard should be visible
-  const showSidebarRoutes = ['/dashboard', '/suppliers', '/maintenance', '/record', '/manual-entry' ,];
+  const showSidebarRoutes = ['/dashboard', '/suppliers', '/maintenance', '/record', '/manual-entry',];
 
   const shouldShowSidebar = showSidebarRoutes.includes(location.pathname);
 
@@ -49,7 +57,7 @@ function Layout() {
     <div className="App">
       <Routes>
         {/* <Route path="/" element={<FormPage />} /> */}
-        <Route path="/" element={<Log/>} />
+        <Route path="/" element={<Log />} />
         {/* <Route path="/login" element={<Login />} /> */}
         {/* <Route path="/register" element={<Register />} /> */}
         <Route path="/form" element={<ProtectedRoute><Form /></ProtectedRoute>} />
@@ -63,34 +71,38 @@ function Layout() {
         <Route path="/meter" element={<ProtectedRoute><MeterForm /></ProtectedRoute>} />
         <Route path="/khata" element={<ProtectedRoute><Kahata /></ProtectedRoute>} />
         <Route path="/project/:id" element={<ProtectedRoute><ProjectDashboard /></ProtectedRoute>} />
-        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>}/>
-        <Route path='/suppliers' element={<ProtectedRoute><Suppliers/></ProtectedRoute>}/>
-        <Route path='/maintenance' element={<ProtectedRoute><Maintenance/></ProtectedRoute>}/>
-        <Route path='/setting' element={<ProtectedRoute><AdminSidebar/></ProtectedRoute>}/>
-        <Route path='/record' element={<ProtectedRoute><Record/></ProtectedRoute>}/>
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path='/suppliers' element={<ProtectedRoute><Suppliers /></ProtectedRoute>} />
+        <Route path='/maintenance' element={<ProtectedRoute><Maintenance /></ProtectedRoute>} />
+        <Route path='/setting' element={<ProtectedRoute><AdminSidebar /></ProtectedRoute>} />
+        <Route path='/record' element={<ProtectedRoute><Record /></ProtectedRoute>} />
         {/* <Route path="/add-data" element={<AddData />} /> */}
 
         <Route path="/maintenance-manager" element={<MaintenanceManager />} />
-         <Route path="/Adddatademo" element={<Add_Data_Demo/>} />
-         <Route path="/lightbillmaintance" element={<LightbillMaintenace/>} />
- <Route path="/lightbillotherexpenses" element={<LightbillOtherExpenses/>} />
- <Route path="/NewComponant" element={<NewComponant/>} />
-  <Route path="/NewComponantOriginal" element={<NewComponantOriginal/>} />
-{/* <Route path="/log" element={<Log/>} /> */}
- <Route path="/maindashboard" element={<MainDashboard/>} />
+        <Route path="/Adddatademo" element={<Add_Data_Demo />} />
+        <Route path="/lightbillmaintance" element={<LightbillMaintenace />} />
+        <Route path="/lightbillotherexpenses" element={<LightbillOtherExpenses />} />
+        <Route path="/NewComponant" element={<NewComponant />} />
+        <Route path="/NewComponantOriginal" element={<NewComponantOriginal />} />
+        {/* <Route path="/log" element={<Log/>} /> */}
+        <Route path="/maindashboard" element={<MainDashboard />} />
 
-  <Route path="/LightBillMatrixView" element={<LightBillMatrixView/>} />
+        <Route path="/LightBillMatrixView" element={<LightBillMatrixView />} />
 
 
-  <Route path="/roommanager" element={<RoomManager />} />
-  {/* other routes */}
+        <Route path="/roommanager" element={<RoomManager />} />
+        {/* other routes */}
+
+        <Route path="/TenantData" element={<TenantData />} />
+        <Route path="/reports" element={<ReportsPage />} />
+
 
       </Routes>
 
       {/* Show Sidebar and Dashboard only for specific routes */}
       {shouldShowSidebar && (
         <div className="container" style={{ display: 'flex' }}>
-        
+
           <Sidebar />
           {/* <Dashboard /> */}
         </div>
