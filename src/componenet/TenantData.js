@@ -145,7 +145,7 @@ const TenantData = () => {
                 <h3 style={getTitleStyle()}>Tenant Data</h3>
 
                 {tenantList.length === 0 ? (
-                    <p style={getNoDataMessageStyle()}>No tenant data available.</p>
+                    <p style={getNoDataMessageStyle()}> tenant data Loading...</p>
                 ) : (
                     <>
                         <div style={getTableWrapperStyle()}>

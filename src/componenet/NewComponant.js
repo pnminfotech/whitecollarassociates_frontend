@@ -54,7 +54,7 @@ function NewComponant() {
   const [selectedRowData, setSelectedRowData] = useState(null);
 
   const [showAddModal, setShowAddModal] = useState(false);
-const [occupiedRoomsList, setOccupiedRoomsList] = useState([]);
+  const [occupiedRoomsList, setOccupiedRoomsList] = useState([]);
 
   const [newTenant, setNewTenant] = useState({
     srNo: '',
@@ -209,24 +209,34 @@ const [occupiedRoomsList, setOccupiedRoomsList] = useState([]);
 
 
   // Filter rooms for selected wing
-  const roomsInWing = roomsData.filter((room) => room.wing === selectedWing);
+  // Make sure roomsData, formData, and selectedWing are available
+  const roomsInWing = roomsData.filter(
+    (room) =>
+      room.wing?.toString().trim().toLowerCase() === selectedWing?.toString().trim().toLowerCase()
+  );
 
-  // Get assigned room numbers from tenant form data
-  const assignedRoomNos = formData.map((tenant) => String(tenant.roomNo));
+  // Check what room numbers are assigned from tenants
+  const assignedRoomNos = formData
+    .map((tenant) => tenant.roomNo)
+    .filter(Boolean) // remove undefined/null
+    .map((roomNo) => String(roomNo).trim()); // normalize
 
-  // Find occupied and vacant rooms
+  // Occupied: rooms assigned to tenants
   const occupiedRoomList = roomsInWing.filter((room) =>
-    assignedRoomNos.includes(String(room.roomNo))
-  );
-  const vacantRoomList = roomsInWing.filter((room) =>
-    !assignedRoomNos.includes(String(room.roomNo))
+    assignedRoomNos.includes(String(room.roomNo).trim())
   );
 
-  // Counts for display
+  // Vacant: rooms not assigned to tenants
+  const vacantRoomList = roomsInWing.filter((room) =>
+    !assignedRoomNos.includes(String(room.roomNo).trim())
+  );
+
+  // Count
   const totalRooms = roomsInWing.length;
   const occupiedRooms = occupiedRoomList.length;
-  const vacantRooms = vacantRoomList.length; // 👈 This is the number (not array)
+  const vacantRooms = vacantRoomList.length;
 
+  // Debug log
 
   // const filteredRooms = roomsData
   //   .filter((room) => room.wing === newTenant.wing && room.floor === Number(newTenant.floorNo))
@@ -310,17 +320,17 @@ const [occupiedRoomsList, setOccupiedRoomsList] = useState([]);
 
 
 
-useEffect(() => {
-  axios.get('http://localhost:4000/api/available-rooms')
-    .then(response => {
-      if (response.data.occupiedRooms) {
-        setOccupiedRoomsList(response.data.occupiedRooms);
-      }
-    })
-    .catch(error => {
-      console.error("Error fetching occupied rooms:", error);
-    });
-}, []);
+  useEffect(() => {
+    axios.get('http://localhost:4000/api/available-rooms')
+      .then(response => {
+        if (response.data.occupiedRooms) {
+          setOccupiedRoomsList(response.data.occupiedRooms);
+        }
+      })
+      .catch(error => {
+        console.error("Error fetching occupied rooms:", error);
+      });
+  }, []);
 
 
 
@@ -364,35 +374,35 @@ useEffect(() => {
 
 
 
-const handleChange = (e) => {
-  const { name, value } = e.target;
+  const handleChange = (e) => {
+    const { name, value } = e.target;
 
-  if (name === 'wing') {
-    setWing(value);
-    setFloor('');
-    setRoomNo('');
-    setNewTenant(prev => ({
-      ...prev,
-      wing: value,
-      floorNo: '',
-      roomNo: ''
-    }));
-  } else if (name === 'floor') {
-    setFloor(value);
-    setRoomNo('');
-    setNewTenant(prev => ({
-      ...prev,
-      floorNo: value,
-      roomNo: ''
-    }));
-  } else if (name === 'roomNo') {
-    setRoomNo(value);
-    setNewTenant(prev => ({
-      ...prev,
-      roomNo: value
-    }));
-  }
-};
+    if (name === 'wing') {
+      setWing(value);
+      setFloor('');
+      setRoomNo('');
+      setNewTenant(prev => ({
+        ...prev,
+        wing: value,
+        floorNo: '',
+        roomNo: ''
+      }));
+    } else if (name === 'floor') {
+      setFloor(value);
+      setRoomNo('');
+      setNewTenant(prev => ({
+        ...prev,
+        floorNo: value,
+        roomNo: ''
+      }));
+    } else if (name === 'roomNo') {
+      setRoomNo(value);
+      setNewTenant(prev => ({
+        ...prev,
+        roomNo: value
+      }));
+    }
+  };
 
   const handleAddTenant = async () => {
     if (!newTenant.name || !newTenant.address || !newTenant.joiningDate) {
@@ -457,17 +467,17 @@ const handleChange = (e) => {
       } else {
         console.error("Axios setup error:", error.message);
       }
-let errMsg = "Failed to add tenant.";
+      let errMsg = "Failed to add tenant.";
 
-if (error.response?.data?.error) {
-  errMsg = error.response.data.error;
-} else if (error.response?.data?.message) {
-  errMsg = error.response.data.message;
-} else if (error.message) {
-  errMsg = error.message;
-}
+      if (error.response?.data?.error) {
+        errMsg = error.response.data.error;
+      } else if (error.response?.data?.message) {
+        errMsg = error.response.data.message;
+      } else if (error.message) {
+        errMsg = error.message;
+      }
 
-alert(errMsg);
+      alert(errMsg);
 
     }
   };
@@ -1497,6 +1507,9 @@ alert(errMsg);
                   style={{
                     borderRadius: '1rem',
                     boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                    maxWidth: '900px',
+                    margin: 'auto',
+                    width: '100%',
                   }}
                 >
                   {/* Header */}
@@ -1528,55 +1541,28 @@ alert(errMsg);
                     style={{
                       maxHeight: '85vh',
                       overflowY: 'auto',
-                      paddingLeft: '1.5rem',
-                      paddingRight: '1.5rem',
+                      padding: '1.5rem',
                     }}
                   >
                     <div className="container-fluid">
                       <div className="row g-3">
                         {[
-                          // { label: 'Sr No', key: 'srNo', type: 'text', readOnly: true },
                           { label: 'Name', key: 'name' },
                           { label: 'Family Members', key: 'members', type: 'number' },
-
                           { label: 'Joining Date', key: 'joiningDate', type: 'date' },
                           { label: 'Deposit Amount', key: 'depositAmount', type: 'number' },
                           { label: 'Phone No', key: 'phoneNo' },
                           { label: 'Address', key: 'address' },
-                          // { label: 'Permanent Address', key: 'address' },
-                          // { label: 'Floor No', key: 'floorNo' },
-                          // { label: 'Room No', key: 'roomNo' },
-
-
-
                           { label: 'Rent Amount', key: 'rentAmount', type: 'number' },
                         ].map(({ label, key, type = 'text', readOnly = false }) => (
-                          <div className="col-12 col-md-6" key={key}>
-
-
-
-
-
-
-
-
-
-
-
-
-
-                            <label
-                              style={{ fontWeight: '600', display: 'block', marginBottom: '0.25rem' }}
-                            >
+                          <div
+                            className="col-12 col-md-6"
+                            key={key}
+                            style={{ display: 'flex', flexDirection: 'column' }}
+                          >
+                            <label style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
                               {label}
                             </label>
-
-
-
-
-
-
-
                             <input
                               type={type}
                               className="form-control"
@@ -1585,21 +1571,24 @@ alert(errMsg);
                               }}
                               value={newTenant[key] || ''}
                               readOnly={readOnly}
-                              onChange={(e) =>
-                                setNewTenant({ ...newTenant, [key]: e.target.value })
-                              }
+                              maxLength={key === 'phoneNo' ? 10 : undefined}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                if (key === 'phoneNo') {
+                                  if (/^\d{0,10}$/.test(value)) {
+                                    setNewTenant({ ...newTenant, [key]: value });
+                                  }
+                                } else {
+                                  setNewTenant({ ...newTenant, [key]: value });
+                                }
+                              }}
                             />
-
-
-
                           </div>
                         ))}
 
-                        {/* Upload Aadhaar */}
+                        {/* Aadhaar Upload */}
                         <div className="col-12 col-md-6">
-                          <label
-                            style={{ fontWeight: '600', display: 'block', marginBottom: '0.25rem' }}
-                          >
+                          <label style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
                             Upload Aadhaar (PDF)
                           </label>
                           <input
@@ -1617,103 +1606,94 @@ alert(errMsg);
                             }
                           />
                         </div>
+
+                        {/* Wing */}
+                        <div className="col-12 col-md-6">
+                          <label style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
+                            Select Wing
+                          </label>
+                          <select
+                            name="wing"
+                            className="form-select"
+                            value={newTenant.wing || ''}
+                            style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}
+                            onChange={(e) =>
+                              setNewTenant({
+                                ...newTenant,
+                                wing: e.target.value,
+                                floor: '',
+                                roomNo: '',
+                              })
+                            }
+                          >
+                            <option value="">Select Wing</option>
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="K">K</option>
+                          </select>
+                        </div>
+
+                        {/* Floor */}
+                        <div className="col-12 col-md-6">
+                          <label style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
+                            Select Floor
+                          </label>
+                          <select
+                            name="floor"
+                            className="form-select"
+                            value={newTenant.floorNo || ''}
+                            style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}
+                            onChange={(e) =>
+                              setNewTenant({
+                                ...newTenant,
+                                floorNo: e.target.value,
+                                roomNo: '',
+                              })
+                            }
+                            disabled={!newTenant.wing}
+                          >
+                            <option value="">Select Floor</option>
+                            <option value="1">1st</option>
+                            <option value="2">2nd</option>
+                            <option value="3">3rd</option>
+                            <option value="4">4th</option>
+                          </select>
+                        </div>
+
+                        {/* Room */}
+                        <div className="col-12 col-md-6">
+                          <label style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
+                            Select Room
+                          </label>
+                          <select
+                            className="form-select"
+                            name="roomNo"
+                            value={newTenant.roomNo}
+                            style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}
+                            onChange={handleChange}
+                            required
+                          >
+                            <option value="">Select Room</option>
+                            {roomData
+                              .filter((room) => {
+                                const isSameWing = room.wing === newTenant.wing;
+                                const isSameFloor =
+                                  String(room.floor) === String(newTenant.floorNo);
+                                const roomId = `${room.floor}-${room.roomNo}`;
+                                const isOccupied = occupiedRoomsList.includes(roomId);
+                                return isSameWing && isSameFloor && !isOccupied;
+                              })
+                              .map((room) => (
+                                <option key={room.roomNo} value={room.roomNo}>
+                                  {room.roomNo}
+                                </option>
+                              ))}
+                          </select>
+                        </div>
                       </div>
                     </div>
+
                   </div>
-
-
-
-
-                  {/* Wing Dropdown */}
-                  <div className="col-12 col-md-6">
-                    <label style={{ fontWeight: '600', display: 'block', marginBottom: '0.25rem' }}>
-                      Select Wing
-                    </label>
-                    <select
-                      name="wing"
-                      className="form-select"
-                      value={newTenant.wing || ''}
-                      onChange={(e) =>
-                        setNewTenant({
-                          ...newTenant,
-                          wing: e.target.value,
-                          floor: '',
-                          roomNo: '',
-                        })
-                      }
-                    >
-                      <option value="">Select Wing</option>
-                      <option value="A">A</option>
-                      <option value="B">B</option>
-                      <option value="K">K</option>
-                    </select>
-                  </div>
-
-                  {/* Floor Dropdown */}
-                  <div className="col-12 col-md-6">
-                    <label style={{ fontWeight: '600', display: 'block', marginBottom: '0.25rem' }}>
-                      Select Floor
-                    </label>
-                    <select
-                      name="floor"
-                      className="form-select"
-                      value={newTenant.floorNo || ''}
-                      onChange={(e) =>
-                        setNewTenant({
-                          ...newTenant,
-                          floorNo: e.target.value,
-                          roomNo: '',
-                        })
-                      }
-                      disabled={!newTenant.wing}
-                    >
-                      <option value="">Select Floor</option>
-                      <option value="1">1st</option>
-                      <option value="2">2nd</option>
-                      <option value="3">3rd</option>
-                      <option value="4">4th</option>
-                    </select>
-                  </div>
-
-                  {/* Room Dropdown */}
-                 {/* Room Dropdown */}
-<div className="col-12 col-md-6">
-  <label style={{ fontWeight: '600', display: 'block', marginBottom: '0.25rem' }}>
-    Select Room
-  </label>
-  <select
-    className="form-control"
-    name="roomNo"
-    value={newTenant.roomNo}
-    onChange={handleChange}
-    required
-  >
-    <option value="">Select Room</option>
-
-    {roomData
-      .filter((room) => {
-        const isSameWing = room.wing === newTenant.wing;
-        const isSameFloor = String(room.floor) === String(newTenant.floorNo);
-
-        // 🔥 Construct room ID like in API: "1-A101"
-        const roomId = `${room.floor}-${room.roomNo}`;
-
-        const isOccupied = occupiedRoomsList.includes(roomId);
-console.log("Checking room:", `${room.floor}-${room.roomNo}`, "Occupied?", isOccupied);
-
-        return isSameWing && isSameFloor && !isOccupied;
-      })
-      .map((room) => (
-        <option key={room.roomNo} value={room.roomNo}>
-          {room.roomNo}
-        </option>
-      ))}
-  </select>
-</div>
-
-
-
-
 
                   {/* Footer */}
                   <div
@@ -1724,9 +1704,7 @@ console.log("Checking room:", `${room.floor}-${room.roomNo}`, "Occupied?", isOcc
                       flexWrap: 'wrap',
                       justifyContent: 'flex-end',
                       gap: '10px',
-                      paddingLeft: '1.5rem',
-                      paddingRight: '1.5rem',
-                      paddingBottom: '1rem',
+                      padding: '1.5rem',
                     }}
                   >
                     <button
@@ -1749,6 +1727,7 @@ console.log("Checking room:", `${room.floor}-${room.roomNo}`, "Occupied?", isOcc
                     </button>
                   </div>
                 </div>
+
               </div>
 
             </div>

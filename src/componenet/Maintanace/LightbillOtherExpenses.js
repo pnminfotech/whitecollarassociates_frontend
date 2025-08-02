@@ -10,6 +10,10 @@ import { FaArrowLeft } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { FaTachometerAlt } from "react-icons/fa";
 
+import axios from 'axios';
+import { FaCheckCircle, FaExclamationTriangle, FaTimesCircle } from 'react-icons/fa';
+
+
 const LightbillOtherExpenses = () => {
   const currentYear = new Date().getFullYear();
   const [lightData, setLightData] = useState([]);
@@ -102,11 +106,11 @@ const LightbillOtherExpenses = () => {
 
 
 
-  const rooms = [
-    { roomNo: '101', meterNo: 'Meter A' },
-    { roomNo: '102', meterNo: 'Meter B' },
-    { roomNo: '103', meterNo: 'Meter C' },
-  ];
+  // const rooms = [
+  //   { roomNo: '101', meterNo: 'Meter A' },
+  //   { roomNo: '102', meterNo: 'Meter B' },
+  //   { roomNo: '103', meterNo: 'Meter C' },
+  // ];
 
 
   const getMonthYear = (dateString) => {
@@ -115,6 +119,48 @@ const LightbillOtherExpenses = () => {
     const year = date.getFullYear().toString().slice(-2);
     return `${month}-${year}`;
   };
+
+
+
+  const [availableRooms, setAvailableRooms] = useState([]);
+
+  useEffect(() => {
+    axios.get("http://localhost:4000/api/") // replace with your actual API
+      .then((res) => {
+        setAvailableRooms(res.data); // assuming array of { _id, roomNo }
+      })
+      .catch((err) => console.error("Failed to load rooms:", err));
+  }, []);
+
+  useEffect(() => {
+    axios
+      .get("http://localhost:4000/api/room/available") // replace with your actual endpoint
+      .then((res) => setAvailableRooms(res.data))
+      .catch((err) => console.error("Error fetching rooms:", err));
+  }, []);
+
+
+
+
+  useEffect(() => {
+    const fetchRooms = async () => {
+      try {
+        const response = await axios.get("http://localhost:4000/api/rooms");
+        // <-- Add this
+        setRooms(response.data);
+      } catch (error) {
+
+      }
+    };
+
+    fetchRooms();
+  }, []);
+
+
+
+
+
+
   useEffect(() => {
     const fetchTenants = async () => {
       try {
@@ -122,50 +168,50 @@ const LightbillOtherExpenses = () => {
         const data = await res.json();
         setTenants(data);
       } catch (err) {
-        console.error("Error fetching tenants:", err);
+
       }
     };
     fetchTenants();
   }, []);
   // In your LightbillOtherExpenses.js component, update the useEffect hook:
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const url = activeTab === 'light'
-          ? 'http://localhost:4000/api/light-bill/all'
-          : 'http://localhost:4000/api/other-expense/all';
+  const fetchData = async () => {
+    try {
+      const url = activeTab === 'light'
+        ? 'http://localhost:4000/api/light-bill/all'
+        : 'http://localhost:4000/api/other-expense/all';
 
-        const res = await fetch(url);
+      const res = await fetch(url);
 
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
 
-        const contentType = res.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          const data = await res.json();
-          if (activeTab === 'light') {
-            setLightBills(data);
-          } else {
-            setOtherExpenses(data);
-          }
-        } else {
-          const text = await res.text();
-          console.error('Response is not JSON:', text);
-          throw new Error('Response is not JSON');
-        }
-      } catch (err) {
-        console.error('Error fetching data:', err);
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await res.json();
         if (activeTab === 'light') {
-          setLightBills([]);
+          setLightBills(data);
         } else {
-          setOtherExpenses([]);
+          setOtherExpenses(data);
         }
+      } else {
+        const text = await res.text();
+
+        throw new Error('Response is not JSON');
+      }
+    } catch (err) {
+
+      if (activeTab === 'light') {
+        setLightBills([]);
+      } else {
+        setOtherExpenses([]);
       }
     }
+  };
 
-    fetchData(); // ✅ Call the function properly
+  useEffect(() => {
+    fetchData();
   }, [activeTab]);
 
   // const fetchData = async () => {
@@ -306,45 +352,34 @@ const LightbillOtherExpenses = () => {
   // Modified handleEdit to handle both tabs
   const handleEdit = (bill) => {
     setSelectedBill(bill);
+
     if (activeTab === 'light') {
-      setUpdatedTotalReading(bill.totalReading);
-      setUpdatedAmount(bill.amount);
-      setUpdatedDate(bill.date?.slice(0, 10));
-      setUpdatedStatus(bill.status);
+      setUpdatedTotalReading(bill.totalReading || '');
+      setUpdatedAmount(bill.amount || '');
+      setUpdatedDate(bill.date ? bill.date.slice(0, 10) : '');
+      setUpdatedStatus(bill.status || 'pending'); // ✅ SAFEGUARD
     } else {
-      setUpdatedMainAmount(bill.mainAmount);
+      setUpdatedMainAmount(bill.mainAmount || '');
       setUpdatedExpenses(bill.expenses?.join(', ') || '');
-      setUpdatedDate(bill.date?.slice(0, 10));
-      setUpdatedStatus(bill.status);
+      setUpdatedDate(bill.date ? bill.date.slice(0, 10) : '');
+      setUpdatedStatus(bill.status || 'pending'); // ✅ SAFEGUARD
     }
+
     setShowEditModal(true);
   };
+
 
   // Modified handleUpdateSubmit to handle both tabs
   const handleUpdateSubmit = async () => {
     try {
-      let bodyData;
-      let url;
-      if (activeTab === 'light') {
-        url = `http://localhost:4000/api/light-bill/${selectedBill._id}`;
-        bodyData = {
-          ...selectedBill,
-          status: updatedStatus,
-          totalReading: updatedTotalReading,
-          amount: updatedAmount,
-          date: updatedDate,
-        };
-      } else {
-        url = `http://localhost:4000/api/other-expense/${selectedBill._id}`;
-        bodyData = {
-          ...selectedBill,
-          status: updatedStatus,
-          mainAmount: updatedMainAmount,
-          expenses: updatedExpenses.split(',').map(e => e.trim()),
-          date: updatedDate,
+      const url = `http://localhost:4000/api/light-bill/${selectedBill._id}`;
+      const bodyData = {
+        amount: Number(updatedAmount),
+        date: updatedDate,
+        status: updatedStatus,
+      };
 
-        };
-      }
+
 
       const res = await fetch(url, {
         method: 'PUT',
@@ -352,15 +387,21 @@ const LightbillOtherExpenses = () => {
         body: JSON.stringify(bodyData),
       });
 
-      if (!res.ok) throw new Error("Update failed");
+      if (!res.ok) {
+        const errorText = await res.text();
 
-      alert("Bill updated!");
+        throw new Error("Update failed");
+      }
+
+      alert("✅ Light bill updated");
       setShowEditModal(false);
-      fetchData();
+      fetchData(); // refresh
     } catch (err) {
-      alert("Failed to update: " + err.message);
+
+      alert("Failed to update");
     }
   };
+
 
   // Modified handleDelete to handle both tabs
   const handleDelete = async (bill) => {
@@ -444,6 +485,29 @@ const LightbillOtherExpenses = () => {
       }];
     }
   });
+  const updateLightBillStatus = async (id, newStatus) => {
+    try {
+      const response = await fetch(`http://localhost:4000/api/light-bill/status/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update status");
+      }
+
+      const data = await response.json();
+
+      // Optionally refresh your list or update state here
+      fetchLightBills(); // Or update state manually to reflect change
+
+    } catch (error) {
+
+    }
+  };
 
   // Updated groupData to eliminate duplicates based on latest entry per name + month
   const groupData = (dataList) => {
@@ -451,28 +515,31 @@ const LightbillOtherExpenses = () => {
     const monthMap = new Map();
 
     dataList.forEach(item => {
-      const name = item.name || item.meterNo || item.customLabel || 'Unknown';
-      const date = new Date(item.date);
-      const monthIndex = new Date(item.date).getMonth() + 1;
-      const monthLabel = months[monthIndex]?.label;
+      const keyName = item.roomNo || item.name || item.meterNo || item.customLabel || 'Unknown';
+      const monthLabel = item.month; // ← directly use the item.month field
 
-      const key = `${name}_${monthLabel}`;
-      if (!monthMap.has(key) || new Date(item.date) > new Date(monthMap.get(key).date)) {
+      if (!monthLabel) return; // skip if no month info
+
+      const key = `${keyName}_${monthLabel}`;
+      const existing = monthMap.get(key);
+
+      // Prefer the most recent or latest item (if needed)
+      if (!existing || new Date(item.date) > new Date(existing.date)) {
         monthMap.set(key, item);
       }
     });
 
     monthMap.forEach(item => {
-      const name = item.name || item.meterNo || item.customLabel || 'Unknown';
-      const monthIndex = new Date(item.date).getMonth() + 1;
-      const monthLabel = months[monthIndex]?.label;
+      const keyName = item.roomNo || item.name || item.meterNo || item.customLabel || 'Unknown';
+      const monthLabel = item.month;
 
-      if (!matrix[name]) matrix[name] = {};
-      matrix[name][monthLabel] = item;
+      if (!matrix[keyName]) matrix[keyName] = {};
+      matrix[keyName][monthLabel] = item; // includes status, amount, type, etc.
     });
 
     return matrix;
   };
+
 
 
 
@@ -533,17 +600,19 @@ const LightbillOtherExpenses = () => {
 
   // Total Light Bill (only meter entries)
   const totalLightBill = filteredLightBills
-    .filter(item => item.type === 'meter')
+    .filter(item => {
+      const isMeter = !!item.meterNo;
+
+      return isMeter;
+    })
     .reduce((sum, item) => sum + Number(item.amount || 0), 0);
 
-  // Total Paid Light Bill (only meter entries + paid)
   const totalPaidLightBill = filteredLightBills
-    .filter(item => item.type === 'meter' && item.status === 'paid')
+    .filter(item => item.meterNo && item.status === 'paid')
     .reduce((sum, item) => sum + Number(item.amount || 0), 0);
 
-  // Total Pending Light Bill (only meter entries + not paid)
   const totalPendingLightBill = filteredLightBills
-    .filter(item => item.type === 'meter' && item.status !== 'paid')
+    .filter(item => item.meterNo && item.status !== 'paid')
     .reduce((sum, item) => sum + Number(item.amount || 0), 0);
 
 
@@ -572,6 +641,31 @@ const LightbillOtherExpenses = () => {
   const handleNavigation = (path) => {
     navigate(path);
   };
+  const toggleLightBillStatus = async (id, currentStatus) => {
+    const newStatus = currentStatus === 'paid' ? 'pending' : 'paid';
+    try {
+      const response = await fetch(`http://localhost:4000/api/light-bill/status/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update status");
+      }
+
+      const data = await response.json();
+
+
+      // Refresh data after update (replace with your method)
+      fetchLightBills(); // or update state manually
+    } catch (error) {
+
+    }
+  };
+
   return (
     <div className="container-fluid px-4 py-3" style={{ fontFamily: 'Poppins, sans-serif' }}>
       <h3 className="fw-bold mb-4 me-3">
@@ -741,18 +835,25 @@ const LightbillOtherExpenses = () => {
       <div className="table-responsive">
         {activeTab === 'light' ? (
           <>
-            <div
+            {/* <div
               className="d-flex align-items-center gap-3 justify-content-end mb-2"
               style={{ fontSize: '0.8rem', color: '#6c757d' }}
             >
               <strong>*Legend:</strong>
+
               <span className="text-secondary">
                 <FaBolt style={{ color: "#e37727" }} /> = Light Bill Amount
               </span>
+
               <span className="text-secondary">
                 <FaTachometerAlt className="text-success" /> = Reading (Units)
               </span>
-            </div>
+
+              <span className="badge bg-success">✅ Paid</span>
+              <span className="badge bg-warning text-dark">⚠️ Pending</span>
+              <span className="text-danger">❌ Not Updated</span>
+            </div> */}
+
 
             <div className="table-responsive">
               <table className="table table-bordered mt-0">
@@ -781,26 +882,57 @@ const LightbillOtherExpenses = () => {
                             }}
                           >
                             {values[month.label] ? (
-                              values[month.label].type === "maushi" ? (
-                                <>₹ {values[month.label].salary}</>
-                              ) : values[month.label].type === "meter" ? (
-                                <>
-                                  <FaBolt style={{ color: "#e37727" }} /> ₹{values[month.label].amount}<br />
-                                  <small className="text-muted">
-                                    <FaTachometerAlt className="me-1 text-success" />
-                                    {values[month.label].totalReading}
-                                  </small>
-                                  <br />
+                              <>
+                                {/* Light Icon and Amount */}
+                                <FaBolt style={{ color: "#e37727" }} /> ₹{values[month.label].amount}<br />
+
+                                {/* Reading Units */}
+                                <small className="text-muted">
+                                  <FaTachometerAlt className="me-1 text-success" />
+                                  {values[month.label].totalReading}
+                                </small><br />
+
+                                {/* Status Badge */}
+                                {typeof values[month.label].status !== 'undefined' ? (
                                   <span
                                     className={`badge ${values[month.label].status === 'paid' ? 'bg-success' : 'bg-warning text-dark'}`}
-                                    style={{ fontSize: '0.7em' }}
+                                    style={{ fontSize: '0.7em', cursor: 'pointer' }}
+                                    title="Click to Edit"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleEdit(values[month.label]);
+                                    }}
                                   >
                                     {values[month.label].status}
                                   </span>
-                                </>
-                              ) : (
-                                <>₹{values[month.label].amount}</>
-                              )
+                                ) : (
+                                  <span className="text-danger">❌ Not Updated</span>
+                                )}
+
+                                {/* Edit and Delete Buttons */}
+                                <div className="mt-1">
+                                  <button
+                                    className="btn btn-sm btn-outline-primary me-1"
+                                    title="Edit"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleEdit(values[month.label]);
+                                    }}
+                                  >
+                                    <FaEdit />
+                                  </button>
+                                  <button
+                                    className="btn btn-sm btn-outline-danger"
+                                    title="Delete"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDelete(values[month.label]);
+                                    }}
+                                  >
+                                    <FontAwesomeIcon icon={faTrash} />
+                                  </button>
+                                </div>
+                              </>
                             ) : (
                               "-"
                             )}
@@ -809,6 +941,7 @@ const LightbillOtherExpenses = () => {
                     </tr>
                   ))}
                 </tbody>
+
               </table>
             </div>
           </>
@@ -818,12 +951,12 @@ const LightbillOtherExpenses = () => {
               <tr>
                 <th>#</th>
                 <th>Date</th>
-                <th>Room No</th> {/* ✅ Added */}
+                <th>Room No</th>
                 <th>Expenses</th>
                 <th>Main Amount</th>
-                <th>Light Bill Status</th> {/* ✅ Added */}
+                <th>Light Bill</th>
                 <th>Status</th>
-                <th className="text-center">Actions</th>
+                {/* <th className="text-center">Actions</th> */}
               </tr>
             </thead>
             <tbody>
@@ -833,21 +966,37 @@ const LightbillOtherExpenses = () => {
                 </tr>
               ) : (
                 filteredOtherExpenses.map((item, idx) => (
-                  <tr key={item._id + '-' + idx}>
+                  <tr key={`${item._id}-${idx}`}>
                     <td>{idx + 1}</td>
                     <td>{new Date(item.date).toLocaleDateString()}</td>
-                    <td>{item.roomNo || '-'}</td> {/* ✅ Room No */}
+                    <td>{item.roomNo || '-'}</td>
                     <td>{item.expenses?.join(', ') || '-'}</td>
-                    <td>{item.mainAmount?.toLocaleString() || '-'}</td>
+                    <td>₹ {item.mainAmount?.toLocaleString() || '-'}</td>
 
-                    <td> {/* ✅ Light Bill Status */}
-                      {item.lightBillStatus === 'paid' ? (
-                        <span className="badge bg-success">Paid</span>
-                      ) : item.lightBillStatus === 'pending' ? (
-                        <span className="badge bg-warning text-dark">Pending</span>
-                      ) : (
-                        '-'
-                      )}
+                    <td>
+                      <div>
+                        {item.lightBillStatus === 'paid' ? (
+                          <span className="badge bg-success">
+                            <FaCheckCircle className="me-1" /> Paid
+                          </span>
+                        ) : item.lightBillStatus === 'pending' ? (
+                          <span
+                            className="badge bg-warning text-dark"
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => handleEdit(item)} // 🔁 Add your own update handler
+                          >
+                            <FaExclamationTriangle className="me-1" /> Pending
+                          </span>
+                        ) : (
+                          <span
+                            className="badge bg-danger"
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => handleEdit(item)} // 🔁 Add your own update handler
+                          >
+                            <FaTimesCircle className="me-1" /> Not Updated
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     <td>
@@ -857,25 +1006,28 @@ const LightbillOtherExpenses = () => {
                         <span className="badge bg-warning text-dark">Pending</span>
                       )}
                     </td>
-                    <td className="text-center">
-                      <button
-                        className="btn btn-sm btn-outline-primary me-2"
-                        onClick={() => handleEdit(item)}
-                      >
-                        <FaEdit />
-                      </button>
-                      <button
-                        className="btn btn-sm btn-outline-danger"
-                        onClick={() => handleDelete(item)}
-                      >
-                        <FontAwesomeIcon icon={faTrash} />
-                      </button>
-                    </td>
+
+                    {/* Optional Actions Column (Uncomment if needed) */}
+                    {/* <td className="text-center">
+            <button
+              className="btn btn-sm btn-outline-primary me-2"
+              onClick={() => handleEdit(item)}
+            >
+              <FaEdit />
+            </button>
+            <button
+              className="btn btn-sm btn-outline-danger"
+              onClick={() => handleDelete(item)}
+            >
+              <FontAwesomeIcon icon={faTrash} />
+            </button>
+          </td> */}
                   </tr>
                 ))
               )}
             </tbody>
           </table>
+
         )}
       </div>
 
@@ -899,18 +1051,24 @@ const LightbillOtherExpenses = () => {
                 <div className="row">
                   <div className="col-md-6 mb-3">
                     <label>Room No</label>
-                    <input
-                      type="text"
+                    <select
                       className="form-control"
-                      value={newEntry.roomNo || ""}
-                      onChange={async (e) => {
-                        const roomNo = e.target.value;
-                        setNewEntry(prev => ({ ...prev, roomNo })); // update roomNo
+                      value={newEntry.roomNo}
+                      onChange={(e) =>
+                        setNewEntry((prev) => ({ ...prev, roomNo: e.target.value }))
+                      }
+                    >
+                      <option value="">-- Select Room No --</option>
+                      {availableRooms.map((room, idx) => (
+                        <option key={idx} value={room.roomNo}>
+                          {room.roomNo}
+                        </option>
+                      ))}
+                    </select>
 
-
-                      }}
-                    />
                   </div>
+
+
                   <div className="col-md-6 mb-3">
                     <label>Meter No</label>
                     <input
@@ -1020,7 +1178,23 @@ const LightbillOtherExpenses = () => {
                         </>
                       )}
 
-                      {newEntry.type === 'maushi' && (
+
+                      <div className="col-md-6 mb-3">
+                        <label>Status</label>
+                        <select
+                          className="form-select"
+                          value={updatedStatus}
+                          onChange={(e) => setUpdatedStatus(e.target.value)}
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="paid">Paid</option>
+                        </select>
+                      </div>
+
+
+
+
+                      {/* {newEntry.type === 'maushi' && (
                         <div className="col-md-6 mb-3">
                           <label>Salary</label>
                           <input
@@ -1030,7 +1204,7 @@ const LightbillOtherExpenses = () => {
                             onChange={(e) => setNewEntry({ ...newEntry, salary: e.target.value })}
                           />
                         </div>
-                      )}
+                      )} */}
 
                       {newEntry.type === 'custom' && (
                         <>
@@ -1177,6 +1351,57 @@ const LightbillOtherExpenses = () => {
         </div>
       )}
 
+      {showEditModal && (
+        <div className="modal d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-lg">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Update Light Bill</h5>
+                <button type="button" className="btn-close" onClick={() => setShowEditModal(false)}></button>
+              </div>
+
+              <div className="modal-body">
+                <div className="row">
+                  <div className="col-md-6 mb-3">
+                    <label>Amount</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={updatedAmount}
+                      onChange={(e) => setUpdatedAmount(e.target.value)}
+                    />
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <label>Date</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      value={updatedDate}
+                      onChange={(e) => setUpdatedDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <label>Status</label>
+                    <select
+                      className="form-select"
+                      value={updatedStatus}
+                      onChange={(e) => setUpdatedStatus(e.target.value)}
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="paid">Paid</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button className="btn btn-secondary" onClick={() => setShowEditModal(false)}>Cancel</button>
+                <button className="btn btn-success" onClick={handleUpdateSubmit}>Save Changes</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
