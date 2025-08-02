@@ -11,9 +11,14 @@ import { useNavigate } from 'react-router-dom';
 import { FaBolt, FaReceipt, FaEye, FaTrash } from 'react-icons/fa'; // example icons
 import { FaSearch } from 'react-icons/fa';
 import { FaSignOutAlt, FaUndo, FaDownload } from "react-icons/fa";
-import FormDownload from '../componenet/Maintanace/FormDownload';
+import FormDownload from './Maintanace/FormDownload';
 import RoomManager from './RoomManager'; // adjust path if needed
 // import { useNavigate } from 'react-router-dom';
+
+
+
+
+
 
 
 
@@ -24,7 +29,6 @@ function NewComponant() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [roomsData, setRoomsData] = useState([]);
-
 
 
   const [editingTenant, setEditingTenant] = useState(null);
@@ -206,15 +210,10 @@ function NewComponant() {
 
   // Filter rooms for selected wing
   // Make sure roomsData, formData, and selectedWing are available
-  // Filter rooms for selected wing; if no wing is selected, fall back to all rooms
-  const roomsInWing = selectedWing
-    ? roomsData.filter(
-      (room) =>
-        room.wing?.toString().trim().toLowerCase() ===
-        selectedWing?.toString().trim().toLowerCase()
-    )
-    : roomsData;
-
+  const roomsInWing = roomsData.filter(
+    (room) =>
+      room.wing?.toString().trim().toLowerCase() === selectedWing?.toString().trim().toLowerCase()
+  );
 
   // Check what room numbers are assigned from tenants
   const assignedRoomNos = formData
@@ -236,9 +235,6 @@ function NewComponant() {
   const totalRooms = roomsInWing.length;
   const occupiedRooms = occupiedRoomList.length;
   const vacantRooms = vacantRoomList.length;
-
-
-
 
   // Debug log
 
@@ -262,7 +258,7 @@ function NewComponant() {
 
 
   useEffect(() => {
-    axios.get(`${apiUrl}forms`) // replace with your actual tenant API route
+    axios.get(`${apiUrl}/forms`) // replace with your actual tenant API route
       .then((res) => setExistingTenants(res.data))
       .catch((err) => console.error('Error fetching tenants:', err));
   }, []);
@@ -271,7 +267,7 @@ function NewComponant() {
 
   useEffect(() => {
     axios
-      .get(`${apiUrl}forms`) // GET https://whitecollarassociates.onrender.com/api/forms
+      .get(apiUrl)
       .then((response) => {
         setFormData(response.data);
         setLoading(false);
@@ -375,17 +371,7 @@ function NewComponant() {
 
 
 
-  // === Global occupancy/vacancy based on roomData ===
-  const activeTenants = formData.filter(t => !t.leaveDate && t.roomNo);
-  const occupiedRoomSet = new Set(
-    activeTenants.map(t => String(t.roomNo).trim())
-  );
-  const occupiedRoomsGlobal = occupiedRoomSet.size;
 
-  // Use roomData for correct total rooms
-  const totalRoomsGlobal = roomData.length;
-
-  const vacantRoomsGlobal = Math.max(0, totalRoomsGlobal - occupiedRoomsGlobal);
 
 
   const handleChange = (e) => {
@@ -731,7 +717,7 @@ function NewComponant() {
       await axios.delete(`${apiUrl}form/${tenant._id}/rent/${monthKey}`);
 
       // Refresh data after delete
-      const response = await axios.get(`${apiUrl}forms`);
+      const response = await axios.get(apiUrl);
       setFormData(response.data);
     } catch (error) {
       alert('Failed to delete rent: ' + (error.response?.data?.message || error.message));
@@ -1134,7 +1120,7 @@ function NewComponant() {
               e.currentTarget.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.1)';
             }}>
             <h6 className="text-muted mb-1">Total Rooms</h6>
-            <h4 className="fw-bold">{totalRoomsGlobal}</h4>
+            <h4 className="fw-bold">{roomData.length}</h4>
           </div>
         </div>
 
@@ -1158,8 +1144,7 @@ function NewComponant() {
           >
             <h6 className="text-muted mb-1">Occupied</h6>
             <h4 className="fw-bold">
-              {occupiedRoomsGlobal}
-
+              {formData.filter(d => !d.leaveDate).length}
             </h4>
           </div>
         </div>
@@ -1187,7 +1172,7 @@ function NewComponant() {
 
 
 
-            <h4 className="fw-bold text-danger">{vacantRoomsGlobal}</h4>
+            <h4 className="fw-bold text-danger"> {vacantRooms}</h4>
           </div>
         </div>
         {/* Pending Maintenance */}
@@ -1905,56 +1890,79 @@ function NewComponant() {
                 <button className="btn-close" onClick={() => setShowDetailsModal(false)}></button>
               </div>
               <div className="modal-body">
-                {/* Personal Info */}
-                <h6>Personal Information</h6>
-                <ul className="list-group mb-3">
-                  <li className="list-group-item">Name:  {selectedTenant.name}</li>
-                  <li className="list-group-item">Room No: {selectedTenant.roomNo}</li>
-                  {/* <li className="list-group-item">Bed No: {selectedTenant.bedNo}</li> */}
-                  <li className="list-group-item">Phone: {selectedTenant.phoneNo}</li>
-                  <li className="list-group-item">Joining Date: {new Date(selectedTenant.joiningDate).toLocaleDateString()}</li>
-                  <li className="list-group-item">Deposit: ₹{Number(selectedTenant.depositAmount || 0).toLocaleString('en-IN')}</li>
-                  <li className="list-group-item">Address: {selectedTenant.address}</li>
-                  {/* <li className="list-group-item">Company Address: {selectedTenant.companyAddress}</li> */}
-                </ul>
+                <div className="container-fluid">
+                  <div className="row">
+                    <div className="col-12">
+                      {/* Personal Info */}
+                      <h6 className="mt-2">Personal Information</h6>
+                      <ul className="list-group mb-3">
+                        <li className="list-group-item d-flex flex-column flex-md-row justify-content-between">
+                          <strong>Name:</strong> <span>{selectedTenant.name}</span>
+                        </li>
+                        <li className="list-group-item d-flex flex-column flex-md-row justify-content-between">
+                          <strong>Room No:</strong> <span>{selectedTenant.roomNo}</span>
+                        </li>
+                        <li className="list-group-item d-flex flex-column flex-md-row justify-content-between">
+                          <strong>Phone:</strong> <span>{selectedTenant.phoneNo}</span>
+                        </li>
+                        <li className="list-group-item d-flex flex-column flex-md-row justify-content-between">
+                          <strong>Joining Date:</strong>
+                          <span>{new Date(selectedTenant.joiningDate).toLocaleDateString()}</span>
+                        </li>
+                        <li className="list-group-item d-flex flex-column flex-md-row justify-content-between">
+                          <strong>Deposit:</strong>
+                          <span>₹{Number(selectedTenant.depositAmount || 0).toLocaleString('en-IN')}</span>
+                        </li>
+                        <li className="list-group-item d-flex flex-column flex-md-row justify-content-between">
+                          <strong>Address:</strong> <span>{selectedTenant.address}</span>
+                        </li>
+                      </ul>
 
-                {/* Rent Info */}
-                <h6>Rent History ({new Date().getFullYear()})</h6>
-                <ul className="list-group">
-                  {Array.from({ length: 12 }, (_, i) => {
-                    const monthDate = new Date(new Date().getFullYear(), i, 1);
-                    const key = monthDate.toLocaleString('default', { month: 'short' }) + '-' + String(monthDate.getFullYear()).slice(-2);
+                      {/* Rent Info */}
+                      <h6 className="mt-3">Rent History ({new Date().getFullYear()})</h6>
+                      <ul className="list-group">
+                        {Array.from({ length: 12 }, (_, i) => {
+                          const monthDate = new Date(new Date().getFullYear(), i, 1);
+                          const key = monthDate.toLocaleString('default', { month: 'short' }) + '-' + String(monthDate.getFullYear()).slice(-2);
 
-                    const rent = selectedTenant.rents?.find(r =>
-                      new Date(r.date).getMonth() === i &&
-                      new Date(r.date).getFullYear() === monthDate.getFullYear()
-                    );
+                          const rent = selectedTenant.rents?.find(r =>
+                            new Date(r.date).getMonth() === i &&
+                            new Date(r.date).getFullYear() === monthDate.getFullYear()
+                          );
 
-                    const isPast = monthDate < new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-                    const joiningDate = new Date(selectedTenant.joiningDate);
-                    const rentStartMonth = new Date(joiningDate.getFullYear(), joiningDate.getMonth() + 1, 1);
-                    const isFutureMonth = monthDate > new Date();
-                    const isBeforeRentStart = monthDate < rentStartMonth;
+                          const isPast = monthDate < new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+                          const joiningDate = new Date(selectedTenant.joiningDate);
+                          const rentStartMonth = new Date(joiningDate.getFullYear(), joiningDate.getMonth() + 1, 1);
+                          const isFutureMonth = monthDate > new Date();
+                          const isBeforeRentStart = monthDate < rentStartMonth;
 
-
-                    return (
-                      <li key={i} className="list-group-item d-flex justify-content-between align-items-center">
-                        {monthDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
-                        {isBeforeRentStart ? (
-                          <span className="badge bg-secondary">Not Applicable</span>
-                        ) : rent ? (
-                          <span className="badge bg-success">₹{Number(rent.rentAmount).toLocaleString('en-IN')} on {new Date(rent.date).toLocaleDateString()}</span>
-                        ) : isFutureMonth ? (
-                          <span className="badge bg-warning text-dark">Upcoming</span>
-                        ) : (
-                          <span className="badge bg-danger">Pending</span>
-                        )}
-                      </li>
-                    );
-
-                  })}
-                </ul>
+                          return (
+                            <li
+                              key={i}
+                              className="list-group-item d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center"
+                            >
+                              <span>{monthDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
+                              {isBeforeRentStart ? (
+                                <span className="badge bg-secondary mt-1 mt-md-0">Not Applicable</span>
+                              ) : rent ? (
+                                <span className="badge bg-success mt-1 mt-md-0">
+                                  ₹{Number(rent.rentAmount).toLocaleString('en-IN')} on{' '}
+                                  {new Date(rent.date).toLocaleDateString()}
+                                </span>
+                              ) : isFutureMonth ? (
+                                <span className="badge bg-warning text-dark mt-1 mt-md-0">Upcoming</span>
+                              ) : (
+                                <span className="badge bg-danger mt-1 mt-md-0">Pending</span>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
               </div>
+
               <div className="modal-footer">
                 <button className="btn btn-secondary" onClick={() => setShowDetailsModal(false)}>Close</button>
               </div>

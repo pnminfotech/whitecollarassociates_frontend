@@ -7,15 +7,15 @@ const DuplicateForms = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-const navigate = useNavigate();
-const handleNavigation =(path)=>{
-  navigate(path);
-}
+  const navigate = useNavigate();
+  const handleNavigation = (path) => {
+    navigate(path);
+  }
 
   useEffect(() => {
     const fetchDuplicateForms = async () => {
       try {
-        const response = await axios.get('http://localhost:4000/api/duplicateforms');
+        const response = await axios.get('https://whitecollarassociates.onrender.com/api/duplicateforms');
         setDuplicateForms(response.data || []); // Fallback to an empty array if response.data is undefined
       } catch (err) {
         setError(err.message);
@@ -61,12 +61,12 @@ const handleNavigation =(path)=>{
                 <td>
                   {form.formData?.rents?.length > 0
                     ? form.formData.rents.map((rent, index) => (
-                        <div key={index}>
-                          <strong>Amount:</strong> {rent.rentAmount || 'N/A'},{' '}
-                          <strong>Date:</strong>{' '}
-                          {rent.date ? new Date(rent.date).toLocaleDateString() : 'N/A'}
-                        </div>
-                      ))
+                      <div key={index}>
+                        <strong>Amount:</strong> {rent.rentAmount || 'N/A'},{' '}
+                        <strong>Date:</strong>{' '}
+                        {rent.date ? new Date(rent.date).toLocaleDateString() : 'N/A'}
+                      </div>
+                    ))
                     : 'No Rents'}
                 </td>
                 <td>
@@ -81,7 +81,7 @@ const handleNavigation =(path)=>{
           )}
         </tbody>
       </table>
-      <button className='btn-primary' onClick={()=>handleNavigation('/mainpage')}>
+      <button className='btn-primary' onClick={() => handleNavigation('/mainpage')}>
         Back
       </button>
     </div>

@@ -62,7 +62,7 @@ function NewComponantOriginal() {
     setShowAddModal(true);
   };
 
-  const apiUrl = 'http://localhost:4000/api/';
+  const apiUrl = 'https://whitecollarassociates.onrender.com/api/';
 
   useEffect(() => {
     axios

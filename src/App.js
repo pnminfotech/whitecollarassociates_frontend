@@ -113,7 +113,7 @@ function Layout() {
 
 function App() {
   return (
-    <BrowserRouter basename="/HostelManager">
+    <BrowserRouter basename="/whitecollarassociates">
       <Layout />
     </BrowserRouter>
   );

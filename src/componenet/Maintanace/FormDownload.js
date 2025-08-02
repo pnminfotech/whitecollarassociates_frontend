@@ -22,7 +22,7 @@ const FormDownload = ({ formData }) => {
       <div id="form-container" className="form-container">
         {/* Header */}
         <header className="form-header">
-          <img src={Img} alt="Logo" className="form-logo" />
+          {/* <img src={Img} alt="Logo" className="form-logo" /> */}
           <div className="form-title">
             <div className="form-no">
               <span  >Form No:</span>
@@ -82,7 +82,7 @@ const FormDownload = ({ formData }) => {
 
         </footer>
 
-        <h6>Regards MUTKE HOSTEL</h6>
+
       </div>
 
       {/* Download Button */}

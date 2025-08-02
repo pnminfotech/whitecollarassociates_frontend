@@ -125,7 +125,7 @@ const LightbillOtherExpenses = () => {
   const [availableRooms, setAvailableRooms] = useState([]);
 
   useEffect(() => {
-    axios.get("http://localhost:4000/api/") // replace with your actual API
+    axios.get("https://whitecollarassociates.onrender.com/api/") // replace with your actual API
       .then((res) => {
         setAvailableRooms(res.data); // assuming array of { _id, roomNo }
       })
@@ -134,7 +134,7 @@ const LightbillOtherExpenses = () => {
 
   useEffect(() => {
     axios
-      .get("http://localhost:4000/api/room/available") // replace with your actual endpoint
+      .get("https://whitecollarassociates.onrender.com/api/room/available") // replace with your actual endpoint
       .then((res) => setAvailableRooms(res.data))
       .catch((err) => console.error("Error fetching rooms:", err));
   }, []);
@@ -145,7 +145,7 @@ const LightbillOtherExpenses = () => {
   useEffect(() => {
     const fetchRooms = async () => {
       try {
-        const response = await axios.get("http://localhost:4000/api/rooms");
+        const response = await axios.get("https://whitecollarassociates.onrender.com/api/rooms");
         // <-- Add this
         setRooms(response.data);
       } catch (error) {
@@ -164,7 +164,7 @@ const LightbillOtherExpenses = () => {
   useEffect(() => {
     const fetchTenants = async () => {
       try {
-        const res = await fetch('http://localhost:4000/api/');
+        const res = await fetch('https://whitecollarassociates.onrender.com/api/');
         const data = await res.json();
         setTenants(data);
       } catch (err) {
@@ -178,8 +178,8 @@ const LightbillOtherExpenses = () => {
   const fetchData = async () => {
     try {
       const url = activeTab === 'light'
-        ? 'http://localhost:4000/api/light-bill/all'
-        : 'http://localhost:4000/api/other-expense/all';
+        ? 'https://whitecollarassociates.onrender.com/api/light-bill/all'
+        : 'https://whitecollarassociates.onrender.com/api/other-expense/all';
 
       const res = await fetch(url);
 
@@ -217,8 +217,8 @@ const LightbillOtherExpenses = () => {
   // const fetchData = async () => {
   //   const url =
   //     activeTab === 'light'
-  //       ? 'http://localhost:4000/api/light-bill/all'
-  //       : 'http://localhost:4000/api/other-expense/all';
+  //       ? 'https://whitecollarassociates.onrender.com/api/light-bill/all'
+  //       : 'https://whitecollarassociates.onrender.com/api/other-expense/all';
   //   try {
   //     const res = await fetch(url);
   //     const data = await res.json();
@@ -232,8 +232,8 @@ const LightbillOtherExpenses = () => {
   const handleAddEntry = async () => {
     try {
       const url = activeTab === 'light'
-        ? 'http://localhost:4000/api/light-bill/'
-        : 'http://localhost:4000/api/other-expense/all';
+        ? 'https://whitecollarassociates.onrender.com/api/light-bill/'
+        : 'https://whitecollarassociates.onrender.com/api/other-expense/all';
 
       let bodyData;
 
@@ -256,7 +256,7 @@ const LightbillOtherExpenses = () => {
 
         let previousDue = 0;
         try {
-          const unpaidRes = await fetch(`http://localhost:4000/api/light-bill/unpaid?meterNo=${meterNo}`);
+          const unpaidRes = await fetch(`https://whitecollarassociates.onrender.com/api/light-bill/unpaid?meterNo=${meterNo}`);
           if (unpaidRes.ok) {
             const unpaidData = await unpaidRes.json();
             previousDue = unpaidData?.amount || 0;
@@ -372,7 +372,7 @@ const LightbillOtherExpenses = () => {
   // Modified handleUpdateSubmit to handle both tabs
   const handleUpdateSubmit = async () => {
     try {
-      const url = `http://localhost:4000/api/light-bill/${selectedBill._id}`;
+      const url = `https://whitecollarassociates.onrender.com/api/light-bill/${selectedBill._id}`;
       const bodyData = {
         amount: Number(updatedAmount),
         date: updatedDate,
@@ -408,8 +408,8 @@ const LightbillOtherExpenses = () => {
     if (window.confirm(`Are you sure you want to delete this ${activeTab === 'light' ? 'light bill' : 'other expense'}?`)) {
       try {
         const url = activeTab === 'light'
-          ? `http://localhost:4000/api/light-bill/${bill._id}`
-          : `http://localhost:4000/api/other-expense/${bill._id}`;
+          ? `https://whitecollarassociates.onrender.com/api/light-bill/${bill._id}`
+          : `https://whitecollarassociates.onrender.com/api/other-expense/${bill._id}`;
 
         const response = await fetch(url, {
           method: 'DELETE',
@@ -487,7 +487,9 @@ const LightbillOtherExpenses = () => {
   });
   const updateLightBillStatus = async (id, newStatus) => {
     try {
-      const response = await fetch(`http://localhost:4000/api/light-bill/status/${id}`, {
+      console.log("Updating ID:", id, "to status:", newStatus); // 👈 Log this
+
+      const response = await fetch(`https://whitecollarassociates.onrender.com/api/light-bill/status/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -496,18 +498,19 @@ const LightbillOtherExpenses = () => {
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Status update failed:", errorText);
         throw new Error("Failed to update status");
       }
 
       const data = await response.json();
-
-      // Optionally refresh your list or update state here
-      fetchLightBills(); // Or update state manually to reflect change
+      fetchLightBills(); // ✅ refresh UI
 
     } catch (error) {
-
+      console.error("Error updating light bill status:", error);
     }
   };
+
 
   // Updated groupData to eliminate duplicates based on latest entry per name + month
   const groupData = (dataList) => {
@@ -644,7 +647,7 @@ const LightbillOtherExpenses = () => {
   const toggleLightBillStatus = async (id, currentStatus) => {
     const newStatus = currentStatus === 'paid' ? 'pending' : 'paid';
     try {
-      const response = await fetch(`http://localhost:4000/api/light-bill/status/${id}`, {
+      const response = await fetch(`https://whitecollarassociates.onrender.com/api/light-bill/status/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -910,7 +913,7 @@ const LightbillOtherExpenses = () => {
                                 )}
 
                                 {/* Edit and Delete Buttons */}
-                                <div className="mt-1">
+                                {/* <div className="mt-1">
                                   <button
                                     className="btn btn-sm btn-outline-primary me-1"
                                     title="Edit"
@@ -931,7 +934,7 @@ const LightbillOtherExpenses = () => {
                                   >
                                     <FontAwesomeIcon icon={faTrash} />
                                   </button>
-                                </div>
+                                </div> */}
                               </>
                             ) : (
                               "-"
@@ -1380,6 +1383,9 @@ const LightbillOtherExpenses = () => {
                       onChange={(e) => setUpdatedDate(e.target.value)}
                     />
                   </div>
+
+
+
                   <div className="col-md-6 mb-3">
                     <label>Status</label>
                     <select

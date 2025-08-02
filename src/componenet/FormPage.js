@@ -26,7 +26,7 @@ const FormPage = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:4000/api/login', {
+      const response = await fetch('https://whitecollarassociates.onrender.com/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: loginEmail, password: loginPassword }),
@@ -49,7 +49,7 @@ const FormPage = () => {
   const handleRegister = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:4000/api/register', {
+      const response = await fetch('https://whitecollarassociates.onrender.com/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, email: registerEmail, password: registerPassword }),
@@ -70,150 +70,150 @@ const FormPage = () => {
   return (
     <div className="container-fluid">
       <div className="row">
-      <div className="container-fluid d-flex justify-content-center align-items-center" style={{marginTop:'17px' }}>
-  <img src={logo} alt="logo" style={{ height: '80px' }} />
-</div>
+        <div className="container-fluid d-flex justify-content-center align-items-center" style={{ marginTop: '17px' }}>
+          <img src={logo} alt="logo" style={{ height: '80px' }} />
+        </div>
 
       </div>
 
       <div className="container">
-  <center>
-    
-    <div className="auth-box" style={{ maxWidth: '600px', marginTop: '30px' }}>
-      {isLogin ? (
-        <>
-          <h1
-            style={{
-              color: '#2c3e50',
-              fontSize: '53px',
-              marginBottom: '30px',
-              fontWeight: '800',
-            }}
-          >
-            Hos<span style={{color:'#de698c'}}>tel</span> Paym<span style={{color:'#de698c'}}>ent</span> <span style={{color:'#de698c'}}>Man</span>agement <span style={{color:'#de698c'}}>Sys</span>tem
-          </h1>
-          <form
-            onSubmit={handleLogin}
-            className="w-75"
-            style={{
-              border: '2px solid #2c3e50',
-              padding: '20px',
-              borderRadius: '8px',
-            }}
-          >
-            <div className="form-group text-start">
-              <label>Email Address:</label>
-              <div className="input-group">
-              <input
-                type="email"
-                className="form-control"
-                placeholder="Enter email"
-                value={loginEmail}
-                onChange={(e) => setLoginEmail(e.target.value)}
-                required
-              />
-               <span className="input-group-text">
-                  <FaUser /> {/* Username Icon */}
-                </span>
-            </div>
-            </div>
-            <div className="form-group text-start">
-              <label>Password:</label>
-              <div className="input-group">
-              <input
-                type="password"
-                className="form-control"
-                placeholder="Enter password"
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-                required
-              />
-               <span className="input-group-text">
-                  <FaLock /> {/* Password Icon */}
-                </span>
-            </div>
-            </div>
-            <button type="submit" className="back-btn btn">
-              Login
-            </button>
-            {loginMessage && <p className="text-danger">{loginMessage}</p>}
-          </form>
-        </>
-      ) : (
-        <>
-        <h1
-            style={{
-              color: '#2c3e50',
-              fontSize: '53px',
-              marginBottom: '30px',
-              fontWeight: '800',
-            }}
-          >
-            Hos<span style={{color:'#de698c'}}>tel</span> Paym<span style={{color:'#de698c'}}>ent</span> <span style={{color:'#de698c'}}>Man</span>agement <span style={{color:'#de698c'}}>Sys</span>tem
-          </h1>
-          <h1 style={{ color: 'BLACK' }}>REGISTER <FontAwesomeIcon icon={faUserPlus} />:</h1>
-          <form
-            onSubmit={handleRegister}
-            className="w-75"
-            style={{
-              border: '2px solid black',
-              padding: '20px',
-              borderRadius: '8px',
-            }}
-          >
-            <div className="form-group text-start">
-              <label>Username</label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Enter username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-              />
-            </div>
-            <div className="form-group text-start">
-              <label>Email Address</label>
-              <input
-                type="email"
-                className="form-control"
-                placeholder="Enter email"
-                value={registerEmail}
-                onChange={(e) => setRegisterEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="form-group text-start">
-              <label>Password</label>
-              <input
-                type="password"
-                className="form-control"
-                placeholder="Enter password"
-                value={registerPassword}
-                onChange={(e) => setRegisterPassword(e.target.value)}
-                required
-              />
-            </div>
-            <button type="submit" className="back-btn btn btn-primary">
-              Register
-            </button>
-            {registerMessage && <p className="text-danger">{registerMessage}</p>}
-          </form>
-        </>
-      )}
-      <p>
-        {isLogin ? "Don't have an account?" : 'Already have an account?'}
-        <button
-          className="btn btn-link"
-          onClick={() => setIsLogin(!isLogin)}
-          style={{ textDecoration: 'none', paddingLeft: '5px' }}
-        >
-          {isLogin ? 'Register here' : 'Login here'}
-        </button>
-      </p>
-    </div>
-  </center>
-</div>
+        <center>
+
+          <div className="auth-box" style={{ maxWidth: '600px', marginTop: '30px' }}>
+            {isLogin ? (
+              <>
+                <h1
+                  style={{
+                    color: '#2c3e50',
+                    fontSize: '53px',
+                    marginBottom: '30px',
+                    fontWeight: '800',
+                  }}
+                >
+                  Hos<span style={{ color: '#de698c' }}>tel</span> Paym<span style={{ color: '#de698c' }}>ent</span> <span style={{ color: '#de698c' }}>Man</span>agement <span style={{ color: '#de698c' }}>Sys</span>tem
+                </h1>
+                <form
+                  onSubmit={handleLogin}
+                  className="w-75"
+                  style={{
+                    border: '2px solid #2c3e50',
+                    padding: '20px',
+                    borderRadius: '8px',
+                  }}
+                >
+                  <div className="form-group text-start">
+                    <label>Email Address:</label>
+                    <div className="input-group">
+                      <input
+                        type="email"
+                        className="form-control"
+                        placeholder="Enter email"
+                        value={loginEmail}
+                        onChange={(e) => setLoginEmail(e.target.value)}
+                        required
+                      />
+                      <span className="input-group-text">
+                        <FaUser /> {/* Username Icon */}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="form-group text-start">
+                    <label>Password:</label>
+                    <div className="input-group">
+                      <input
+                        type="password"
+                        className="form-control"
+                        placeholder="Enter password"
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                        required
+                      />
+                      <span className="input-group-text">
+                        <FaLock /> {/* Password Icon */}
+                      </span>
+                    </div>
+                  </div>
+                  <button type="submit" className="back-btn btn">
+                    Login
+                  </button>
+                  {loginMessage && <p className="text-danger">{loginMessage}</p>}
+                </form>
+              </>
+            ) : (
+              <>
+                <h1
+                  style={{
+                    color: '#2c3e50',
+                    fontSize: '53px',
+                    marginBottom: '30px',
+                    fontWeight: '800',
+                  }}
+                >
+                  Hos<span style={{ color: '#de698c' }}>tel</span> Paym<span style={{ color: '#de698c' }}>ent</span> <span style={{ color: '#de698c' }}>Man</span>agement <span style={{ color: '#de698c' }}>Sys</span>tem
+                </h1>
+                <h1 style={{ color: 'BLACK' }}>REGISTER <FontAwesomeIcon icon={faUserPlus} />:</h1>
+                <form
+                  onSubmit={handleRegister}
+                  className="w-75"
+                  style={{
+                    border: '2px solid black',
+                    padding: '20px',
+                    borderRadius: '8px',
+                  }}
+                >
+                  <div className="form-group text-start">
+                    <label>Username</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Enter username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="form-group text-start">
+                    <label>Email Address</label>
+                    <input
+                      type="email"
+                      className="form-control"
+                      placeholder="Enter email"
+                      value={registerEmail}
+                      onChange={(e) => setRegisterEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="form-group text-start">
+                    <label>Password</label>
+                    <input
+                      type="password"
+                      className="form-control"
+                      placeholder="Enter password"
+                      value={registerPassword}
+                      onChange={(e) => setRegisterPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <button type="submit" className="back-btn btn btn-primary">
+                    Register
+                  </button>
+                  {registerMessage && <p className="text-danger">{registerMessage}</p>}
+                </form>
+              </>
+            )}
+            <p>
+              {isLogin ? "Don't have an account?" : 'Already have an account?'}
+              <button
+                className="btn btn-link"
+                onClick={() => setIsLogin(!isLogin)}
+                style={{ textDecoration: 'none', paddingLeft: '5px' }}
+              >
+                {isLogin ? 'Register here' : 'Login here'}
+              </button>
+            </p>
+          </div>
+        </center>
+      </div>
 
     </div>
   );

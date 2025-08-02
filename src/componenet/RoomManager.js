@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
-const apiUrl = 'http://localhost:4000/api/rooms';
+const apiUrl = 'https://whitecollarassociates.onrender.com/api/rooms';
 
 export default function RoomManager() {
   const [rooms, setRooms] = useState([]);

@@ -18,7 +18,7 @@ const MeterForm = () => {
     date: "",
   });
 
-const navigate = useNavigate();
+  const navigate = useNavigate();
   const handleNavigation = (path) => {
     navigate(path);
   };
@@ -49,8 +49,8 @@ const navigate = useNavigate();
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     const apiUrl = isLightBill
-      ? "http://localhost:4000/api/light-bill"
-      : "http://localhost:4000/api/other-expense";
+      ? "https://whitecollarassociates.onrender.com/api/light-bill"
+      : "https://whitecollarassociates.onrender.com/api/other-expense";
     const data = isLightBill ? lightBillData : otherExpenseData;
 
     try {
@@ -69,32 +69,32 @@ const navigate = useNavigate();
 
   const downloadExcel = async () => {
     const apiUrl = isLightBill
-      ? "http://localhost:4000/api/light-bill/all"
-      : "http://localhost:4000/api/other-expense/all";
-  
+      ? "https://whitecollarassociates.onrender.com/api/light-bill/all"
+      : "https://whitecollarassociates.onrender.com/api/other-expense/all";
+
     try {
       // Fetch data from the backend
       const response = await fetch(apiUrl);
       if (!response.ok) {
         throw new Error("Failed to fetch data.");
       }
-  
+
       const data = await response.json();
-  
+
       // Format data for Excel
       const formattedData = isLightBill
         ? data.map((item) => ({
-            "Meter No": item.meterNo,
-            "Total Reading": item.totalReading,
-            Amount: item.amount,
-            Date: item.date,
-          }))
+          "Meter No": item.meterNo,
+          "Total Reading": item.totalReading,
+          Amount: item.amount,
+          Date: item.date,
+        }))
         : data.map((item) => ({
-            "Main Amount": item.mainAmount,
-            Expenses: item.expenses.join(", "),
-            Date: item.date,
-          }));
-  
+          "Main Amount": item.mainAmount,
+          Expenses: item.expenses.join(", "),
+          Date: item.date,
+        }));
+
       // Generate and download Excel file
       const worksheet = XLSX.utils.json_to_sheet(formattedData);
       const workbook = XLSX.utils.book_new();
@@ -108,7 +108,7 @@ const navigate = useNavigate();
       alert("Failed to download Excel file.");
     }
   };
-  
+
 
   return (
     <div className="container mt-5">
@@ -248,7 +248,7 @@ const navigate = useNavigate();
               <button type="submit" className="btn btn-primary">
                 Submit
               </button>
-              <button type="submit" className="btn-warning" onClick={()=>handleNavigation('/add-data')}>
+              <button type="submit" className="btn-warning" onClick={() => handleNavigation('/add-data')}>
                 Back
               </button>
               <button type="button" className="btn btn-secondary" onClick={downloadExcel}>

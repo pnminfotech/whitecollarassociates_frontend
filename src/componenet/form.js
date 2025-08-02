@@ -27,7 +27,7 @@ const Form = () => {
 
   // const fetchSrNo = async () => {
   //   try {
-  //     const response = await axios.get('http://localhost:4000/api/forms/count');
+  //     const response = await axios.get('https://whitecollarassociates.onrender.com/api/forms/count');
   //     setFormData((prev) => ({ ...prev, srNo: response.data.nextSrNo }));
   //   } catch (error) {
   //     console.error("Error fetching Sr No:", error);
@@ -46,7 +46,7 @@ const Form = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:4000/api/forms', formData);
+      await axios.post('https://whitecollarassociates.onrender.com/api/forms', formData);
       alert('Form submitted successfully');
       navigate('/add-data');
     } catch (error) {
@@ -58,7 +58,7 @@ const Form = () => {
     <>
       <h2>Tenant Form</h2>
       <form onSubmit={handleSubmit} className="form-container">
-       
+
 
         <div className="form-group">
           <label htmlFor="name">Name</label>

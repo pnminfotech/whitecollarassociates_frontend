@@ -58,7 +58,7 @@ function Add_Data_Demo() {
     companyAddress: '',
   });
 
-  const apiUrl = 'http://localhost:4000/api/'; // Replace with your actual API endpoint
+  const apiUrl = 'https://whitecollarassociates.onrender.com/api/'; // Replace with your actual API endpoint
   const correctPassword = "987654";
 
 
@@ -92,7 +92,7 @@ function Add_Data_Demo() {
 
     const fetchData = async () => {
       try {
-        const response = await fetch(`http://localhost:4000/api/form/${id}`);
+        const response = await fetch(`https://whitecollarassociates.onrender.com/api/form/${id}`);
         if (!response.ok) throw new Error("Failed to fetch data");
 
         const data = await response.json();
@@ -204,7 +204,7 @@ function Add_Data_Demo() {
       const currentYear = currentDate.getFullYear();
 
       const response = await fetch(
-        `http://localhost:4000/api/light-bill/all-bills?month=${currentMonth}&year=${currentYear}`
+        `https://whitecollarassociates.onrender.com/api/light-bill/all-bills?month=${currentMonth}&year=${currentYear}`
       );
       const data = await response.json();
       setLightBillEntrys(data);
@@ -223,7 +223,7 @@ function Add_Data_Demo() {
       if (recordToArchive) {
         // Archive the record
         axios
-          .post(`http://localhost:4000/api/forms/archive`, { id })
+          .post(`https://whitecollarassociates.onrender.com/api/forms/archive`, { id })
           .then((response) => {
             console.log('Data archived:', response.data);
             // Remove from formData
@@ -254,7 +254,7 @@ function Add_Data_Demo() {
 
   useEffect(() => {
     axios
-      .get('http://localhost:4000/api/forms/archived')
+      .get('https://whitecollarassociates.onrender.com/api/forms/archived')
       .then((response) => {
         console.log('Archived data fetched:', response.data);
         setDeletedData(response.data); // Populate the archived data state
@@ -267,7 +267,7 @@ function Add_Data_Demo() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:4000/api/forms")
+      .get("https://whitecollarassociates.onrender.com/api/forms")
       .then((response) => {
         const leaveData = {};
         response.data.forEach((item) => {
@@ -331,8 +331,8 @@ function Add_Data_Demo() {
     const currentYear = now.getFullYear();
 
     const apiUrl = isLightBillEntry
-      ? `http://localhost:4000/api/light-bill/all-bills?month=${currentMonth}&year=${currentYear}`
-      : `http://localhost:4000/api/other-expense/all`;
+      ? `https://whitecollarassociates.onrender.com/api/light-bill/all-bills?month=${currentMonth}&year=${currentYear}`
+      : `https://whitecollarassociates.onrender.com/api/other-expense/all`;
 
     try {
       const response = await fetch(apiUrl);
@@ -436,7 +436,7 @@ function Add_Data_Demo() {
     const currentDate = new Date().toISOString().split("T")[0];
 
     try {
-      const response = await fetch("http://localhost:4000/api/leave", {
+      const response = await fetch("https://whitecollarassociates.onrender.com/api/leave", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -471,7 +471,7 @@ function Add_Data_Demo() {
     if (newRentAmount === 0) {
       // 📌 If Rent Amount is 0, Call DELETE API http://localhost:5000
       axios
-        .delete(`http://localhost:4000/api//api/form/${currentFormId}/rent/${monthYear}`)
+        .delete(`https://whitecollarassociates.onrender.com/api//api/form/${currentFormId}/rent/${monthYear}`)
         .then(() => {
           alert("Rent removed successfully!");
 
@@ -503,7 +503,7 @@ function Add_Data_Demo() {
 
     // 📌 Send PUT request to update rent
     axios
-      .put(`http://localhost:4000/api/form/${currentFormId}`, updatedRent)
+      .put(`https://whitecollarassociates.onrender.com/api/form/${currentFormId}`, updatedRent)
       .then((response) => {
         const patched = {
           ...response.data,
@@ -552,7 +552,7 @@ function Add_Data_Demo() {
 
   const handleDeleteConfirm = async () => {
     try {
-      await axios.delete(`http://localhost:4000/api/form/${currentDeleteId}`);
+      await axios.delete(`https://whitecollarassociates.onrender.com/api/form/${currentDeleteId}`);
       setFormData((prevFormData) => prevFormData.filter((data) => data._id !== currentDeleteId));
       alert('Form deleted successfully');
       setShowDeleteConfirmation(false);  // Close confirmation modal
@@ -570,7 +570,7 @@ function Add_Data_Demo() {
   };
   const undoArchive = (data) => {
     axios
-      .post(`http://localhost:4000/api/forms/restore`, { id: data._id })
+      .post(`https://whitecollarassociates.onrender.com/api/forms/restore`, { id: data._id })
       .then(() => {
         // Re-fetch entire updated tenant list after restore
         axios.get(apiUrl).then((response) => {
@@ -621,7 +621,7 @@ function Add_Data_Demo() {
     // }
 
     axios
-      .put(`http://localhost:4000/api/update/${currentFormId}`, updatedFormData)
+      .put(`https://whitecollarassociates.onrender.com/api/update/${currentFormId}`, updatedFormData)
       .then((response) => {
         const updatedData = formData.map((data) =>
           data._id === response.data._id ? response.data : data

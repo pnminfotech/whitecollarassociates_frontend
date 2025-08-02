@@ -9,7 +9,7 @@ const ReportsPage = () => {
 
     useEffect(() => {
         axios
-            .get('http://localhost:4000/api/')
+            .get('https://whitecollarassociates.onrender.com/api/')
             .then((res) => setTenants(res.data))
             .catch((err) => console.error('Error fetching tenants:', err));
     }, []);
@@ -113,21 +113,7 @@ const ReportsPage = () => {
                         <p><strong>Total Paid:</strong> ₹${totalPaid}</p>
                         <p><strong>Due Amount:</strong> ₹${totalDue}</p>
                     </div>
-                    <h3>Payment History</h3>
-                    <table>
-                        <tr>
-                            <th>Month</th>
-                            <th>Paid Amount</th>
-                            <th>Paid Date</th>
-                        </tr>
-                        ${latestRents.map(rent => `
-                            <tr>
-                                <td>${rent.month || '-'}</td>
-                                <td>₹${rent.rentAmount || 0}</td>
-                                <td>${rent.date ? new Date(rent.date).toLocaleDateString() : '-'}</td>
-                            </tr>
-                        `).join('')}
-                    </table>
+                    
                 </div>
             </body>
             </html>

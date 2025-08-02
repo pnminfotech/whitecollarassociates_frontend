@@ -66,15 +66,20 @@ const MainDashboard = () => {
 
   useEffect(() => {
     Promise.all([
-      fetch('http://localhost:4000/api/').then(res => res.json()),
-      fetch('http://localhost:4000/api/light-bill/all').then(res => res.json()),
-      fetch('http://localhost:4000/api/other-expense/all').then(res => res.json()),
-    ]).then(([tenants, lightBills, otherExpenses]) => {
-      const totalBeds = tenants.length;
-      const occupied = tenants.filter(t => !t.leaveDate).length;
-      const vacant = totalBeds - occupied;
-      const deposits = tenants.filter(t => Number(t.depositAmount) > 0).length;
+      fetch('https://whitecollarassociates.onrender.com/api/').then(res => res.json()), // tenants
+      fetch('https://whitecollarassociates.onrender.com/api/rooms').then(res => res.json()), // ✅ rooms
+      fetch('https://whitecollarassociates.onrender.com/api/light-bill/all').then(res => res.json()),
+      fetch('https://whitecollarassociates.onrender.com/api/other-expense/all').then(res => res.json()),
+    ]).then(([tenants, roomsData, lightBills, otherExpenses]) => {
+      // ✅ ROOM SUMMARY
+      const assignedRoomNos = tenants.map(t => String(t.roomNo).trim()).filter(Boolean);
+      const occupiedRooms = roomsData.filter(room =>
+        assignedRoomNos.includes(String(room.roomNo).trim())
+      ).length;
+      const totalRooms = roomsData.length;
+      const vacantRooms = totalRooms - occupiedRooms;
 
+      // ✅ RENT SUMMARY
       const now = new Date();
       const pendingRents = tenants.filter(t => {
         const lastRent = t.rents?.[t.rents.length - 1];
@@ -82,23 +87,28 @@ const MainDashboard = () => {
         const rentDate = new Date(lastRent.date);
         return rentDate.getMonth() !== now.getMonth() || rentDate.getFullYear() !== now.getFullYear();
       }).length;
+      const deposits = tenants.filter(t => Number(t.depositAmount) > 0).length;
 
+      // ✅ LIGHT
       const totalLight = lightBills.reduce((sum, b) => sum + Number(b.amount || 0), 0);
       const paidLight = lightBills.filter(b => b.status === 'paid').reduce((sum, b) => sum + Number(b.amount), 0);
       const pendingLight = totalLight - paidLight;
 
+      // ✅ MAINTENANCE
       const totalMaint = otherExpenses.reduce((sum, x) => sum + Number(x.mainAmount || 0), 0);
       const paidMaint = otherExpenses.filter(x => x.status === 'paid').reduce((sum, x) => sum + Number(x.mainAmount), 0);
       const pendingMaint = totalMaint - paidMaint;
 
+      // ✅ FINAL SUMMARY
       setSummary({
-        beds: { total: totalBeds, occupied, vacant },
+        beds: { total: totalRooms, occupied: occupiedRooms, vacant: vacantRooms },
         rent: { pending: pendingRents, deposits },
         light: { paid: paidLight, pending: pendingLight },
         maintenance: { paid: paidMaint, pending: pendingMaint },
       });
     });
   }, []);
+
 
   const dayName = currentTime.toLocaleDateString(undefined, { weekday: 'long' });
   const dateString = currentTime.toLocaleDateString();
@@ -375,15 +385,19 @@ const MainDashboard = () => {
 
         {/* Summary Section */}
         <section className="row g-2 mb-3 px-2">
-          {renderCard('Total Rooms', summary.beds.total || 0, '#76b1d9', <MdOutlineBedroomParent />)}
-          {renderCard('Vacant Rooms', summary.beds.vacant || 0, '#efe89e', <MdOutlineBedroomParent />)}
+          {renderCard('Total Rooms', 48, '#76b1d9', <MdOutlineBedroomParent />)}
+          {renderCard('Vacant Rooms', 0, '#efe89e', <MdOutlineBedroomParent />)}
+
           {renderCard('Pending Rents', summary.rent.pending || 0, '#ffe0e0', <FiBarChart2 />)}
           {renderCard('Deposits Received', summary.rent.deposits || 0, '#acddaf', <FiBarChart2 />)}
-          {renderCard('Light Bill Paid', `₹${summary.light.pending || 0}`, '#7897af', <MdLightbulbOutline />)}
-          {renderCard('Light Bill Pending', `₹${summary.light.paid || 0}`, '#f5d4a0', <MdLightbulbOutline />)}
-          {renderCard('Maintenance Paid', `₹${summary.maintenance.pending || 0}`, '#cebaed', <MdOutlineReceiptLong />)}
-          {renderCard('Maintenance Pending', `₹${summary.maintenance.paid || 0}`, '#afe6f3', <MdOutlineReceiptLong />)}
+
+          {renderCard('Light Bill Paid', `₹${summary.light.paid || 0}`, '#7897af', <MdLightbulbOutline />)}
+          {renderCard('Light Bill Pending', `₹${summary.light.pending || 0}`, '#f5d4a0', <MdLightbulbOutline />)}
+
+          {renderCard('Maintenance Paid', `₹${summary.maintenance.paid || 0}`, '#cebaed', <MdOutlineReceiptLong />)}
+          {renderCard('Maintenance Pending', `₹${summary.maintenance.pending || 0}`, '#afe6f3', <MdOutlineReceiptLong />)}
         </section>
+
 
         {/* Welcome & Chart Section */}
         <section className="row g-3 mt-2 px-2">
