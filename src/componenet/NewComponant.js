@@ -1316,14 +1316,14 @@ function NewComponant() {
                             <br />
 
                             <small className="text-muted">
-                              Rent: ₹{
-                                (() => {
-                                  const room = roomsData.find(r => String(r.roomNo) === String(tenant.roomNo));
-                                  const bed = room?.beds.find(b => String(b.bedNo) === String(tenant.bedNo));
-                                  return room?.price || 0;
-                                })()
-                              }
+                              Rent: ₹{current?.rentAmount || (() => {
+                                const room = roomsData.find(
+                                  r => String(r.roomNo).trim() === String(tenant.roomNo).trim()
+                                );
+                                return room?.price || 0;
+                              })()}
                             </small>
+
 
                             <div className="text-muted small">
                               {new Date(tenant.joiningDate).toLocaleDateString()}

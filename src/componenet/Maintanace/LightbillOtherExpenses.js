@@ -233,7 +233,7 @@ const LightbillOtherExpenses = () => {
     try {
       const url = activeTab === 'light'
         ? 'https://whitecollarassociates.onrender.com/api/light-bill/'
-        : 'https://whitecollarassociates.onrender.com/api/other-expense/all';
+        : 'https://whitecollarassociates.onrender.com/api/other-expense/';
 
       let bodyData;
 
@@ -281,11 +281,13 @@ const LightbillOtherExpenses = () => {
         };
       } else {
         bodyData = {
+          roomNo: newEntry.roomNo || "",   // ✅ include roomNo
           mainAmount: newEntry.mainAmount,
           expenses: Array.isArray(newEntry.expenses)
             ? newEntry.expenses.filter(e => e.trim() !== "")
             : [],
           date: newEntry.date,
+          status: updatedStatus || 'pending',
         };
       }
 
@@ -372,14 +374,22 @@ const LightbillOtherExpenses = () => {
   // Modified handleUpdateSubmit to handle both tabs
   const handleUpdateSubmit = async () => {
     try {
-      const url = `https://whitecollarassociates.onrender.com/api/light-bill/${selectedBill._id}`;
-      const bodyData = {
-        amount: Number(updatedAmount),
-        date: updatedDate,
-        status: updatedStatus,
-      };
+      const url = activeTab === 'light'
+        ? `https://whitecollarassociates.onrender.com/api/light-bill/${selectedBill._id}`
+        : `https://whitecollarassociates.onrender.com/api/other-expense/${selectedBill._id}`;
 
-
+      const bodyData = activeTab === 'light'
+        ? {
+          amount: Number(updatedAmount),
+          date: updatedDate,
+          status: updatedStatus,
+        }
+        : {
+          mainAmount: Number(updatedMainAmount),
+          expenses: updatedExpenses.split(',').map(e => e.trim()),
+          date: updatedDate,
+          status: updatedStatus,
+        };
 
       const res = await fetch(url, {
         method: 'PUT',
@@ -387,20 +397,16 @@ const LightbillOtherExpenses = () => {
         body: JSON.stringify(bodyData),
       });
 
-      if (!res.ok) {
-        const errorText = await res.text();
+      if (!res.ok) throw new Error("Update failed");
 
-        throw new Error("Update failed");
-      }
-
-      alert("✅ Light bill updated");
+      alert("✅ Entry updated");
       setShowEditModal(false);
-      fetchData(); // refresh
+      fetchData();
     } catch (err) {
-
       alert("Failed to update");
     }
   };
+
 
 
   // Modified handleDelete to handle both tabs
@@ -862,7 +868,7 @@ const LightbillOtherExpenses = () => {
               <table className="table table-bordered mt-0">
                 <thead>
                   <tr>
-                    <th>Name</th>
+                    <th>RoomNo</th>
                     {months
                       .filter(m => m.value !== 0)
                       .map((month) => (
@@ -957,9 +963,9 @@ const LightbillOtherExpenses = () => {
                 <th>Room No</th>
                 <th>Expenses</th>
                 <th>Main Amount</th>
-                <th>Light Bill</th>
+                {/* <th>Light Bill</th> */}
                 <th>Status</th>
-                {/* <th className="text-center">Actions</th> */}
+                <th className="text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -976,7 +982,7 @@ const LightbillOtherExpenses = () => {
                     <td>{item.expenses?.join(', ') || '-'}</td>
                     <td>₹ {item.mainAmount?.toLocaleString() || '-'}</td>
 
-                    <td>
+                    {/* <td>
                       <div>
                         {item.lightBillStatus === 'paid' ? (
                           <span className="badge bg-success">
@@ -992,39 +998,42 @@ const LightbillOtherExpenses = () => {
                           </span>
                         ) : (
                           <span
-                            className="badge bg-danger"
-                            style={{ cursor: 'pointer' }}
-                            onClick={() => handleEdit(item)} // 🔁 Add your own update handler
+                          // className="badge bg-danger"
+                          // style={{ cursor: 'pointer' }}
+                          // onClick={() => handleEdit(item)} // 🔁 Add your own update handler
                           >
-                            <FaTimesCircle className="me-1" /> Not Updated
-                          </span>
-                        )}
-                      </div>
-                    </td>
+                            {/* <FaTimesCircle className="me-1" /> Not Updated */}
+                    {/* </span> */}
+                    {/* )} */}
+                    {/* </div> */}
+                    {/* </td> } */}
 
                     <td>
-                      {item.status === 'paid' ? (
-                        <span className="badge bg-success">Paid</span>
-                      ) : (
-                        <span className="badge bg-warning text-dark">Pending</span>
-                      )}
+                      <span
+                        className={`badge ${item.status === 'paid' ? 'bg-success' : 'bg-warning text-dark'}`}
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => handleEdit(item)}
+                      >
+                        {item.status === 'paid' ? 'Paid' : 'Pending'}
+                      </span>
                     </td>
 
+
                     {/* Optional Actions Column (Uncomment if needed) */}
-                    {/* <td className="text-center">
-            <button
-              className="btn btn-sm btn-outline-primary me-2"
-              onClick={() => handleEdit(item)}
-            >
-              <FaEdit />
-            </button>
-            <button
-              className="btn btn-sm btn-outline-danger"
-              onClick={() => handleDelete(item)}
-            >
-              <FontAwesomeIcon icon={faTrash} />
-            </button>
-          </td> */}
+                    <td className="text-center">
+                      <button
+                        className="btn btn-sm btn-outline-primary me-2"
+                        onClick={() => handleEdit(item)}
+                      >
+                        <FaEdit />
+                      </button>
+                      <button
+                        className="btn btn-sm btn-outline-danger"
+                        onClick={() => handleDelete(item)}
+                      >
+                        <FontAwesomeIcon icon={faTrash} />
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
@@ -1054,8 +1063,8 @@ const LightbillOtherExpenses = () => {
                 <div className="row">
                   <div className="col-md-6 mb-3">
                     <label>Room No</label>
-                    <select
-                      className="form-control"
+                    <select style={{ margin: "10px 0px" }}
+                      className="form-control "
                       value={newEntry.roomNo}
                       onChange={(e) =>
                         setNewEntry((prev) => ({ ...prev, roomNo: e.target.value }))
@@ -1070,20 +1079,56 @@ const LightbillOtherExpenses = () => {
                     </select>
 
                   </div>
+                  <div className="col-md-6 mb-3">
+                    <label>Date</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      value={newEntry.date}
+                      onChange={(e) => setNewEntry({ ...newEntry, date: e.target.value })}
+                    />
+                  </div>
+
+                  {activeTab === 'light' && (
+                    <div className="col-md-6 mb-3">
+                      <label>Meter No</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Enter Meter No"
+                        value={newEntry.meterNo}
+                        onChange={(e) =>
+                          setNewEntry((prev) => ({ ...prev, meterNo: e.target.value }))
+                        }
+                      />
+                    </div>
+                  )}
 
 
                   <div className="col-md-6 mb-3">
-                    <label>Meter No</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="Enter Meter No"
-                      value={newEntry.meterNo}
-                      onChange={(e) => setNewEntry({ ...newEntry, meterNo: e.target.value })}
-                    />
-
-
+                    <label>Status</label>
+                    <select style={{ margin: "10px 0px" }}
+                      className="form-select"
+                      value={updatedStatus}
+                      onChange={(e) => setUpdatedStatus(e.target.value)}
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="paid">Paid</option>
+                    </select>
                   </div>
+
+                  {/* <div className="col-md-6 mb-3">
+                    <label>Main Amount</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={newEntry.mainAmount}
+                      onChange={(e) => setNewEntry({ ...newEntry, mainAmount: e.target.value })}
+                    />
+                  </div> */}
+
+
+
                 </div>
 
                 <div className="row">
@@ -1168,7 +1213,7 @@ const LightbillOtherExpenses = () => {
                               onChange={(e) => setNewEntry({ ...newEntry, totalReading: e.target.value })}
                             />
                           </div> */}
-                          <div className="col-md-6 mb-3">
+                          {/* <div className="col-md-6 mb-3">
                             <label>Amount</label>
                             <input
                               type="number"
@@ -1176,23 +1221,12 @@ const LightbillOtherExpenses = () => {
                               value={newEntry.amount}
                               onChange={(e) => setNewEntry({ ...newEntry, amount: e.target.value })}
                             />
-                          </div>
+                          </div> */}
 
                         </>
                       )}
 
 
-                      <div className="col-md-6 mb-3">
-                        <label>Status</label>
-                        <select
-                          className="form-select"
-                          value={updatedStatus}
-                          onChange={(e) => setUpdatedStatus(e.target.value)}
-                        >
-                          <option value="pending">Pending</option>
-                          <option value="paid">Paid</option>
-                        </select>
-                      </div>
 
 
 
@@ -1244,6 +1278,8 @@ const LightbillOtherExpenses = () => {
                             <option key={month.label} value={month.label}>{month.label}</option>
                           ))}
                         </select>
+
+
                       </div>
                       <div className="col-md-6 mb-3">
                         <label>Year</label>
@@ -1294,7 +1330,31 @@ const LightbillOtherExpenses = () => {
                           value={newEntry.mainAmount}
                           onChange={(e) => setNewEntry({ ...newEntry, mainAmount: e.target.value })}
                         />
+
+
+
+
+
+
                       </div>
+
+                      <div className="col-md-6 mb-3">
+                        <label>Status</label>
+                        <select
+                          className="form-select"
+                          value={updatedStatus}
+                          onChange={(e) => setUpdatedStatus(e.target.value)}
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="paid">Paid</option>
+                        </select>
+
+
+
+
+                      </div>
+
+                      {/* 
                       <div className="col-md-6 mb-3">
                         <label>Date</label>
                         <input
@@ -1303,7 +1363,7 @@ const LightbillOtherExpenses = () => {
                           value={newEntry.date}
                           onChange={(e) => setNewEntry({ ...newEntry, date: e.target.value })}
                         />
-                      </div>
+                      </div> */}
                       <div className="col-12 mb-3">
                         <label className="form-label">Expenses:</label>
                         {newEntry.expenses.map((expense, index) => (

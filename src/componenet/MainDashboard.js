@@ -59,7 +59,56 @@ const MainDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
-
+  const staticRooms = [
+    { wing: 'A', floor: 1, roomNo: 'A101' },
+    { wing: 'A', floor: 1, roomNo: 'A102' },
+    { wing: 'A', floor: 1, roomNo: 'A103' },
+    { wing: 'A', floor: 1, roomNo: 'A104' },
+    { wing: 'A', floor: 2, roomNo: 'A201' },
+    { wing: 'A', floor: 2, roomNo: 'A202' },
+    { wing: 'A', floor: 2, roomNo: 'A203' },
+    { wing: 'A', floor: 2, roomNo: 'A204' },
+    { wing: 'A', floor: 3, roomNo: 'A301' },
+    { wing: 'A', floor: 3, roomNo: 'A302' },
+    { wing: 'A', floor: 3, roomNo: 'A303' },
+    { wing: 'A', floor: 3, roomNo: 'A304' },
+    { wing: 'A', floor: 4, roomNo: 'A401' },
+    { wing: 'A', floor: 4, roomNo: 'A402' },
+    { wing: 'A', floor: 4, roomNo: 'A403' },
+    { wing: 'A', floor: 4, roomNo: 'A404' },
+    { wing: 'B', floor: 1, roomNo: 'B101' },
+    { wing: 'B', floor: 1, roomNo: 'B102' },
+    { wing: 'B', floor: 1, roomNo: 'B103' },
+    { wing: 'B', floor: 1, roomNo: 'B104' },
+    { wing: 'B', floor: 2, roomNo: 'B201' },
+    { wing: 'B', floor: 2, roomNo: 'B202' },
+    { wing: 'B', floor: 2, roomNo: 'B203' },
+    { wing: 'B', floor: 2, roomNo: 'B204' },
+    { wing: 'B', floor: 3, roomNo: 'B301' },
+    { wing: 'B', floor: 3, roomNo: 'B302' },
+    { wing: 'B', floor: 3, roomNo: 'B303' },
+    { wing: 'B', floor: 3, roomNo: 'B304' },
+    { wing: 'B', floor: 4, roomNo: 'B401' },
+    { wing: 'B', floor: 4, roomNo: 'B402' },
+    { wing: 'B', floor: 4, roomNo: 'B403' },
+    { wing: 'B', floor: 4, roomNo: 'B404' },
+    { wing: 'K', floor: 1, roomNo: 'K101' },
+    { wing: 'K', floor: 1, roomNo: 'K102' },
+    { wing: 'K', floor: 1, roomNo: 'K103' },
+    { wing: 'K', floor: 1, roomNo: 'K104' },
+    { wing: 'K', floor: 2, roomNo: 'K201' },
+    { wing: 'K', floor: 2, roomNo: 'K202' },
+    { wing: 'K', floor: 2, roomNo: 'K203' },
+    { wing: 'K', floor: 2, roomNo: 'K204' },
+    { wing: 'K', floor: 3, roomNo: 'K301' },
+    { wing: 'K', floor: 3, roomNo: 'K302' },
+    { wing: 'K', floor: 3, roomNo: 'K303' },
+    { wing: 'K', floor: 3, roomNo: 'K304' },
+    { wing: 'K', floor: 4, roomNo: 'K401' },
+    { wing: 'K', floor: 4, roomNo: 'K402' },
+    { wing: 'K', floor: 4, roomNo: 'K403' },
+    { wing: 'K', floor: 4, roomNo: 'K404' },
+  ];
 
 
 
@@ -67,16 +116,15 @@ const MainDashboard = () => {
   useEffect(() => {
     Promise.all([
       fetch('https://whitecollarassociates.onrender.com/api/').then(res => res.json()), // tenants
-      fetch('https://whitecollarassociates.onrender.com/api/rooms').then(res => res.json()), // ✅ rooms
       fetch('https://whitecollarassociates.onrender.com/api/light-bill/all').then(res => res.json()),
       fetch('https://whitecollarassociates.onrender.com/api/other-expense/all').then(res => res.json()),
-    ]).then(([tenants, roomsData, lightBills, otherExpenses]) => {
-      // ✅ ROOM SUMMARY
+    ]).then(([tenants, lightBills, otherExpenses]) => {
+
+      // ✅ ROOM SUMMARY using staticRooms
       const assignedRoomNos = tenants.map(t => String(t.roomNo).trim()).filter(Boolean);
-      const occupiedRooms = roomsData.filter(room =>
-        assignedRoomNos.includes(String(room.roomNo).trim())
-      ).length;
-      const totalRooms = roomsData.length;
+      const allRoomNos = staticRooms.map(r => String(r.roomNo).trim());
+      const occupiedRooms = allRoomNos.filter(roomNo => assignedRoomNos.includes(roomNo)).length;
+      const totalRooms = allRoomNos.length;
       const vacantRooms = totalRooms - occupiedRooms;
 
       // ✅ RENT SUMMARY
@@ -101,7 +149,7 @@ const MainDashboard = () => {
 
       // ✅ FINAL SUMMARY
       setSummary({
-        beds: { total: totalRooms, occupied: occupiedRooms, vacant: vacantRooms },
+        room: { total: totalRooms, occupied: occupiedRooms, vacant: vacantRooms },
         rent: { pending: pendingRents, deposits },
         light: { paid: paidLight, pending: pendingLight },
         maintenance: { paid: paidMaint, pending: pendingMaint },
@@ -385,8 +433,8 @@ const MainDashboard = () => {
 
         {/* Summary Section */}
         <section className="row g-2 mb-3 px-2">
-          {renderCard('Total Rooms', 48, '#76b1d9', <MdOutlineBedroomParent />)}
-          {renderCard('Vacant Rooms', 0, '#efe89e', <MdOutlineBedroomParent />)}
+          {renderCard('Total Rooms', summary.room?.total || 0, '#76b1d9', <MdOutlineBedroomParent />)}
+          {renderCard('Vacant Rooms', summary.room?.vacant || 0, '#efe89e', <MdOutlineBedroomParent />)}
 
           {renderCard('Pending Rents', summary.rent.pending || 0, '#ffe0e0', <FiBarChart2 />)}
           {renderCard('Deposits Received', summary.rent.deposits || 0, '#acddaf', <FiBarChart2 />)}
@@ -397,6 +445,7 @@ const MainDashboard = () => {
           {renderCard('Maintenance Paid', `₹${summary.maintenance.paid || 0}`, '#cebaed', <MdOutlineReceiptLong />)}
           {renderCard('Maintenance Pending', `₹${summary.maintenance.pending || 0}`, '#afe6f3', <MdOutlineReceiptLong />)}
         </section>
+
 
 
         {/* Welcome & Chart Section */}

@@ -1,0 +1,22 @@
+{
+  "files": {
+    "main.css": "/whitecollarassociates/static/css/main.f1a8ec6a.css",
+    "main.js": "/whitecollarassociates/static/js/main.eb7640ce.js",
+    "static/js/213.dbe0eb66.chunk.js": "/whitecollarassociates/static/js/213.dbe0eb66.chunk.js",
+    "static/js/455.a2ef8b95.chunk.js": "/whitecollarassociates/static/js/455.a2ef8b95.chunk.js",
+    "static/js/488.a14a6384.chunk.js": "/whitecollarassociates/static/js/488.a14a6384.chunk.js",
+    "static/media/hostelbg.png": "/whitecollarassociates/static/media/hostelbg.205d91d6780227f78208.png",
+    "static/media/hostel-vector-26477303.jpg": "/whitecollarassociates/static/media/hostel-vector-26477303.381e64146f5c62df6f43.jpg",
+    "static/media/mutkehostel.png": "/whitecollarassociates/static/media/mutkehostel.ea525e6c24212d0e8c4c.png",
+    "index.html": "/whitecollarassociates/index.html",
+    "main.f1a8ec6a.css.map": "/whitecollarassociates/static/css/main.f1a8ec6a.css.map",
+    "main.eb7640ce.js.map": "/whitecollarassociates/static/js/main.eb7640ce.js.map",
+    "213.dbe0eb66.chunk.js.map": "/whitecollarassociates/static/js/213.dbe0eb66.chunk.js.map",
+    "455.a2ef8b95.chunk.js.map": "/whitecollarassociates/static/js/455.a2ef8b95.chunk.js.map",
+    "488.a14a6384.chunk.js.map": "/whitecollarassociates/static/js/488.a14a6384.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.f1a8ec6a.css",
+    "static/js/main.eb7640ce.js"
+  ]
+}
