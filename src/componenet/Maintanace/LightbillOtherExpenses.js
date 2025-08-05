@@ -1105,17 +1105,7 @@ const LightbillOtherExpenses = () => {
                   )}
 
 
-                  <div className="col-md-6 mb-3">
-                    <label>Status</label>
-                    <select style={{ margin: "10px 0px" }}
-                      className="form-select"
-                      value={updatedStatus}
-                      onChange={(e) => setUpdatedStatus(e.target.value)}
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="paid">Paid</option>
-                    </select>
-                  </div>
+
 
                   {/* <div className="col-md-6 mb-3">
                     <label>Main Amount</label>
@@ -1127,7 +1117,17 @@ const LightbillOtherExpenses = () => {
                     />
                   </div> */}
 
-
+                  <div className="col-md-6 mb-3">
+                    <label>Status</label>
+                    <select style={{ margin: "10px 0px" }}
+                      className="form-select"
+                      value={updatedStatus}
+                      onChange={(e) => setUpdatedStatus(e.target.value)}
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="paid">Paid</option>
+                    </select>
+                  </div>
 
                 </div>
 
@@ -1322,6 +1322,7 @@ const LightbillOtherExpenses = () => {
                       ))}
                   </select>
                 </div> */}
+
                       <div className="col-md-6 mb-3">
                         <label>Main Amount</label>
                         <input
@@ -1337,8 +1338,16 @@ const LightbillOtherExpenses = () => {
 
 
                       </div>
-
                       <div className="col-md-6 mb-3">
+                        <label>Year</label>
+                        <input
+                          type="number"
+                          className="form-control"
+                          value={newEntry.year}
+                          onChange={(e) => setNewEntry({ ...newEntry, year: e.target.value })}
+                        />
+                      </div>
+                      {/* <div className="col-md-6 mb-3">
                         <label>Status</label>
                         <select
                           className="form-select"
@@ -1352,7 +1361,7 @@ const LightbillOtherExpenses = () => {
 
 
 
-                      </div>
+                      </div> */}
 
                       {/* 
                       <div className="col-md-6 mb-3">
@@ -1364,7 +1373,7 @@ const LightbillOtherExpenses = () => {
                           onChange={(e) => setNewEntry({ ...newEntry, date: e.target.value })}
                         />
                       </div> */}
-                      <div className="col-12 mb-3">
+                      <div className="col-md-6 mb-3">
                         <label className="form-label">Expenses:</label>
                         {newEntry.expenses.map((expense, index) => (
                           <div key={index} className="d-flex mb-2">
