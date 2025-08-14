@@ -44,6 +44,8 @@ import TenantData from './componenet/TenantData'; // adjust path if needed
 
 
 
+import MonthlyBills from './componenet/MonthlyBills'; // adjust path if needed
+
 
 function Layout() {
   const location = useLocation();
@@ -95,7 +97,8 @@ function Layout() {
 
         <Route path="/TenantData" element={<TenantData />} />
         <Route path="/reports" element={<ReportsPage />} />
-
+        {/* <Route path="/" element={<HomePage />} /> Your homepage */}
+        <Route path="/monthly-bills" element={<MonthlyBills />} /> {/* ✅ Our new page */}
 
       </Routes>
 

@@ -126,7 +126,7 @@ function NewComponant() {
     setShowAddModal(true);
   };
 
-  const apiUrl = 'https://whitecollarassociates.onrender.com/api/';
+  const apiUrl = 'http://localhost:4000/api/';
   const correctPassword = "987654";
 
 
@@ -297,7 +297,7 @@ function NewComponant() {
       .catch(err => console.error("Error fetching archived tenants:", err));
   }, []);
   useEffect(() => {
-    axios.get('https://whitecollarassociates.onrender.com/api/rooms')
+    axios.get('http://localhost:4000/api/rooms')
       .then(response => setRoomsData(response.data))
       .catch(err => console.error("Failed to fetch rooms:", err));
   }, []);
@@ -321,7 +321,7 @@ function NewComponant() {
 
 
   useEffect(() => {
-    axios.get('https://whitecollarassociates.onrender.com/api/available-rooms')
+    axios.get('http://localhost:4000/api/available-rooms')
       .then(response => {
         if (response.data.occupiedRooms) {
           setOccupiedRoomsList(response.data.occupiedRooms);

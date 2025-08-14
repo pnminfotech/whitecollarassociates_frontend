@@ -874,7 +874,11 @@ const LightbillOtherExpenses = () => {
                       .map((month) => (
                         <th key={month.value}>{month.label}</th>
                       ))}
+
+                    <th>Total</th>
                   </tr>
+
+
                 </thead>
                 <tbody>
                   {Object.entries(groupData(filteredLightBills)).map(([name, values]) => (
@@ -892,16 +896,11 @@ const LightbillOtherExpenses = () => {
                           >
                             {values[month.label] ? (
                               <>
-                                {/* Light Icon and Amount */}
                                 <FaBolt style={{ color: "#e37727" }} /> ₹{values[month.label].amount}<br />
-
-                                {/* Reading Units */}
                                 <small className="text-muted">
                                   <FaTachometerAlt className="me-1 text-success" />
                                   {values[month.label].totalReading}
                                 </small><br />
-
-                                {/* Status Badge */}
                                 {typeof values[month.label].status !== 'undefined' ? (
                                   <span
                                     className={`badge ${values[month.label].status === 'paid' ? 'bg-success' : 'bg-warning text-dark'}`}
@@ -917,37 +916,21 @@ const LightbillOtherExpenses = () => {
                                 ) : (
                                   <span className="text-danger">❌ Not Updated</span>
                                 )}
-
-                                {/* Edit and Delete Buttons */}
-                                {/* <div className="mt-1">
-                                  <button
-                                    className="btn btn-sm btn-outline-primary me-1"
-                                    title="Edit"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleEdit(values[month.label]);
-                                    }}
-                                  >
-                                    <FaEdit />
-                                  </button>
-                                  <button
-                                    className="btn btn-sm btn-outline-danger"
-                                    title="Delete"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleDelete(values[month.label]);
-                                    }}
-                                  >
-                                    <FontAwesomeIcon icon={faTrash} />
-                                  </button>
-                                </div> */}
                               </>
                             ) : (
                               "-"
                             )}
                           </td>
                         ))}
+
+                      {/* ✅ Add this column to show total light amount */}
+                      <td>
+                        ₹{Object.values(values)
+                          .reduce((sum, item) => sum + (item?.amount || 0), 0)
+                          .toLocaleString('en-IN')}
+                      </td>
                     </tr>
+
                   ))}
                 </tbody>
 

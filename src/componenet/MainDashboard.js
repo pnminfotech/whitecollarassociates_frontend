@@ -241,7 +241,7 @@ const MainDashboard = () => {
       {
         title: 'Rent Status',
         data: [
-          { name: 'Deposits', value: summary.rent.deposits || 0 },
+          { name: 'Rent', value: summary.rent.deposits || 0 },
           { name: 'Pending', value: summary.rent.pending || 0 },
         ],
       },

@@ -25,13 +25,13 @@ function NewComponant() {
   const [error, setError] = useState(null);
   const [roomsData, setRoomsData] = useState([]);
 
-
-
+  // const [selectedWing, setSelectedWing] = useState('All Wings');
+  const [selectedWing, setSelectedWing] = useState("All Wings");
   const [editingTenant, setEditingTenant] = useState(null);
   const [editRentAmount, setEditRentAmount] = useState('');
   const [editRentDate, setEditRentDate] = useState('');
   const [activeTab, setActiveTab] = useState('light');
-  const [lightBills, setLightBills] = useState([]);
+
   // const [activeTab, setActiveTab] = useState('light'); // 'light' or 'other'
   const [searchText, setSearchText] = useState('');
   const [leaveDates, setLeaveDates] = useState({});
@@ -88,7 +88,310 @@ function NewComponant() {
 
   const [selectedYear, setSelectedYear] = useState('All Records');
 
-  const [selectedWing, setSelectedWing] = useState('');
+
+  const [selectedBillId, setSelectedBillId] = useState(null);
+  const [cashAmount, setCashAmount] = useState(0);
+  const [onlineAmount, setOnlineAmount] = useState(0);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [paymentStatus, setPaymentStatus] = React.useState(null); // "Paid" or "Pending"
+  const [remainingAmount, setRemainingAmount] = React.useState(null);
+
+
+
+  const [monthlyBills, setMonthlyBills] = useState([]);
+
+
+
+  const [dueAmountForModal, setDueAmountForModal] = useState(0);
+
+
+
+  const getBillForTenant = (tenantId) => {
+    if (!tenantId || !monthlyBills.length) return null;
+
+    // Find all bills for this tenant (works for populated or plain tenantId)
+    const billsForTenant = monthlyBills.filter(b =>
+      b.tenantId?._id?.toString() === tenantId?.toString() ||
+      b.tenantId?.toString() === tenantId?.toString()
+    );
+
+    if (!billsForTenant.length) return null;
+
+    // Sort by created date (or any other timestamp you have)
+    billsForTenant.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    return billsForTenant[0]; // Most recent bill
+  };
+
+  const getTotalAmountFromBill = (tenantId) => {
+    const bill = getBillForTenant(tenantId);
+    return bill?.totalAmount ?? 0;
+  };
+
+  const getCashPaidAmount = (tenantId) => {
+    const bill = getBillForTenant(tenantId);
+    return bill?.cashPayment ?? 0;
+  };
+
+  const getOnlinePaidAmount = (tenantId) => {
+    const bill = getBillForTenant(tenantId);
+    return bill?.onlinePayment ?? 0;
+  };
+
+  const getRemainingAmountFromBill = (tenantId) => {
+    const bill = getBillForTenant(tenantId);
+    return bill?.remainingAmount ?? 0;
+  };
+
+
+
+  const findBillForTenant = (tenantId) => {
+    return monthlyBills.find(
+      b =>
+        b.tenantId?._id?.toString() === tenantId?.toString() ||
+        b.tenantId?.toString() === tenantId?.toString()
+    ) || null;
+  };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // const getCashPaidAmount = (tenantId) => {
+  //   const bill = monthlyBills.find(b => b.tenantId === tenantId);
+  //   return bill?.cashPayment || 0;
+  // };
+  // const getTotalAmountFromBill = (tenantId) => {
+  //   const bill = monthlyBills.find(b => {
+  //     if (b.tenantId && typeof b.tenantId === "object" && b.tenantId._id) {
+  //       return b.tenantId._id.toString() === tenantId.toString();
+  //     }
+  //     return b.tenantId?.toString() === tenantId.toString();
+  //   });
+  //   console.log("Searching totalAmount for tenant:", tenantId, "→ Found bill:", bill);
+  //   return bill?.totalAmount ?? 0;
+  // };
+
+
+  // const getRemainingAmountFromBill = (tenantId) => {
+  //   const bill = monthlyBills.find(
+  //     b => b.tenantId?._id === tenantId || b.tenantId === tenantId
+  //   );
+  //   return bill?.remainingAmount ?? 0;
+  // };
+
+
+  // const getOnlinePaidAmount = (tenantId) => {
+  //   const bill = monthlyBills.find(b => b.tenantId === tenantId);
+  //   return bill?.onlinePayment || 0;
+  // };
+
+  const getRemainingAmount = (tenantId) => {
+    const bill = monthlyBills.find(b => b.tenantId === tenantId);
+    return bill?.remainingAmount ?? 0;
+  };
+
+
+
+
+
+
+
+
+  const handleSavePayment = async () => {
+    try {
+      if (!selectedTenant) return;
+
+      // Send the update to the backend
+      const res = await axios.put(`${apiUrl}monthly-bills/${selectedTenant._id}`, {
+        cashPayment: Number(cashAmount),
+        onlinePayment: Number(onlineAmount),
+      });
+
+      // Get the updated bill object from the response
+      const updatedBill = res.data.bill;
+
+      // Update the monthlyBills array in state without refreshing
+      setMonthlyBills(prevBills =>
+        prevBills.map(bill =>
+          bill._id === updatedBill._id ? updatedBill : bill
+        )
+      );
+
+      // Close the modal
+      setIsModalOpen(false);
+
+    } catch (error) {
+      console.error("Error saving payment:", error);
+    }
+  };
+  // Make sure this is correct
+  const apiUrl1 = "https://whitecollarassociates.onrender.com/api/monthly-bills/";
+
+  const handleSaveStatus = async () => {
+    if (!selectedTenant?._id) {
+      alert("No tenant selected");
+      return;
+    }
+
+    // ✅ Use safe ID match
+    const bill = findBillForTenant(selectedTenant._id);
+
+    if (!bill) {
+      alert("Bill not found for this tenant");
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      const res = await axios.put(`${apiUrl1}${bill._id}`, {
+        cashPayment: cashAmount,
+        onlinePayment: onlineAmount,
+      });
+
+      const updatedBill = res.data.bill;
+      setMonthlyBills(prev =>
+        prev.map(b => (b._id === updatedBill._id ? updatedBill : b))
+      );
+
+      setIsModalOpen(false);
+      alert("Payment updated successfully!");
+    } catch (error) {
+      alert("Failed to save status");
+      console.error(error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+
+
+
+
+  const fetchAllTenants = async () => {
+    try {
+      const res = await axios.get('https://whitecollarassociates.onrender.com/api/tenants');
+      setFormData(res.data);
+    } catch (err) {
+      console.error('Error fetching tenants:', err);
+    }
+  };
+  const fetchRooms = async () => {
+    try {
+      const res = await axios.get('https://whitecollarassociates.onrender.com/api/rooms'); // full backend URL
+      setRoomsData(res.data);
+    } catch (err) {
+      console.error('Error fetching rooms:', err);
+    }
+  };
+
+
+
+  const getLatestLightBillAmount = (roomNo) => {
+    const billsForRoom = lightBills.filter(bill => bill.roomNo === roomNo);
+
+    if (billsForRoom.length === 0) return 0;
+
+    const latest = billsForRoom.reduce((latestBill, current) => {
+      return new Date(current.date) > new Date(latestBill.date) ? current : latestBill;
+    });
+
+    return latest.amount || 0;
+  };
+
+
+  const getLatestRentAmount = (tenant) => {
+    if (!tenant.rents || tenant.rents.length === 0) return 0;
+
+    const latest = tenant.rents.reduce((a, b) => {
+      return new Date(a.date) > new Date(b.date) ? a : b;
+    });
+
+    return latest.rentAmount || 0;
+  };
+
+
+
+
+  const getLatestTotalAmountForTenant = (roomNo) => {
+    // Latest Rent
+    const tenant = formData.find(t => t.roomNo === roomNo);
+    const latestRent = tenant?.rents?.length
+      ? tenant.rents.slice().sort((a, b) => new Date(b.date) - new Date(a.date))[0]?.rentAmount || 0
+      : 0;
+
+    // Latest Light Bill
+    const billsForRoom = lightBills.filter(b => b.roomNo === roomNo);
+    const latestLightBill = billsForRoom.length
+      ? billsForRoom.sort((a, b) => new Date(b.date) - new Date(a.date))[0]?.amount || 0
+      : 0;
+
+    return latestRent + latestLightBill;
+  };
+
+
+
+
+
+  // const getCashPaidAmount = (tenantId) => {
+  //   const bill = monthlyBills.find((b) => b.tenantId === tenantId);
+  //   return bill?.cashPayment || 0;
+  // };
+
+  // const getOnlinePaidAmount = (tenantId) => {
+  //   const bill = monthlyBills.find((b) => b.tenantId === tenantId);
+  //   return bill?.onlinePayment || 0;
+  // };
+
+
+
+
+  const getLatestLightBillForTenant = (roomNo) => {
+    const bills = lightBills
+      .filter(bill => String(bill.roomNo).trim().toUpperCase() === String(roomNo).trim().toUpperCase())
+      .sort((a, b) => new Date(b.month) - new Date(a.month));
+
+    return bills.length > 0 ? bills[0].lightAmount : null;
+  };
+
+
+
+  const [lightBills, setLightBills] = useState([]);
+
+  useEffect(() => {
+    fetchLightBills();
+  }, []);
+
+  const fetchLightBills = async () => {
+    try {
+      const res = await axios.get(`${apiUrl}light-bill/all`);
+      setLightBills(res.data);
+    } catch (error) {
+      console.error("Failed to fetch light bills:", error);
+    }
+  };
+
+  useEffect(() => {
+    axios.get('https://whitecollarassociates.onrender.com/api/monthly-bills/monthly')
+      .then(res => setMonthlyBills(res.data))
+      .catch(err => console.error(err));
+  }, []);
 
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
@@ -123,11 +426,45 @@ function NewComponant() {
   };
 
   const apiUrl = 'https://whitecollarassociates.onrender.com/api/';
-  const correctPassword = "987654";
+  const correctPassword = "5757";
+
+
+
+  const fetchTotalAmountAndGenerate = async () => {
+    try {
+      // 1. Fetch total amount from your backend
+      const totalAmountResponse = await axios.get(`${apiUrl}totalAmount`);
+      const totalAmount = totalAmountResponse.data.amount;
+
+      console.log("Total amount fetched:", totalAmount);
+
+      // 2. Call generate API with totalAmount or any other data
+      const generateResponse = await axios.post(`${apiUrl1}generate`, {
+        amount: totalAmount,
+        // add other data if needed
+      });
+
+      console.log("Generate API response:", generateResponse.data);
+
+      alert("Generation successful!");
+    } catch (error) {
+      console.error("Error fetching amount or generating:", error);
+    }
+  };
+
+
+
+
+
+
+
 
 
 
   const roomData = [
+
+
+
     // Wing A - 16 Rooms (4 floors × 4 rooms)
     { wing: 'A', floor: 1, roomNo: 'A101' },
     { wing: 'A', floor: 1, roomNo: 'A102' },
@@ -145,6 +482,9 @@ function NewComponant() {
     { wing: 'A', floor: 4, roomNo: 'A402' },
     { wing: 'A', floor: 4, roomNo: 'A403' },
     { wing: 'A', floor: 4, roomNo: 'A404' },
+
+
+
 
     // Wing B - 16 Rooms
     { wing: 'B', floor: 1, roomNo: 'B101' },
@@ -164,6 +504,7 @@ function NewComponant() {
     { wing: 'B', floor: 4, roomNo: 'B403' },
     { wing: 'B', floor: 4, roomNo: 'B404' },
 
+
     // Wing K - 16 Rooms
     { wing: 'K', floor: 1, roomNo: 'K101' },
     { wing: 'K', floor: 1, roomNo: 'K102' },
@@ -182,7 +523,12 @@ function NewComponant() {
     { wing: 'K', floor: 4, roomNo: 'K401' },
     { wing: 'K', floor: 4, roomNo: 'K402' },
     { wing: 'K', floor: 4, roomNo: 'K403' },
-    { wing: 'K', floor: 4, roomNo: 'K404' }
+    { wing: 'K', floor: 4, roomNo: 'K404' },
+
+    { wing: 'A', floor: 0, roomNo: 'A99' },
+    { wing: 'A', floor: 0, roomNo: 'A100' },
+    { wing: 'K', floor: 0, roomNo: 'K99' }
+
   ];
 
 
@@ -192,14 +538,37 @@ function NewComponant() {
   const [selectedFloor, setSelectedFloor] = useState("");
 
   const filteredRooms = roomData.filter((room) => {
-    return (
-      (selectedWing ? room.wing === selectedWing : true) &&
-      (selectedFloor ? room.floor === parseInt(selectedFloor) : true)
-    );
+    const wingMatch = selectedWing ? room.wing === selectedWing : true;
+    const floorMatch = selectedFloor
+      ? room.floor === parseInt(selectedFloor)
+      : true;
+    return wingMatch && floorMatch;
   });
 
 
+
   const [existingTenants, setExistingTenants] = useState([]);
+
+
+
+
+  const getFloorOptions = (selectedWing) => {
+    const floors = [1, 2, 3, 4]; // regular floors
+    const options = floors.map(f => <option key={f} value={f}>Floor {f}</option>);
+
+    // Add Ground floor only for A and K
+    if (selectedWing === 'A' || selectedWing === 'K') {
+      options.unshift(<option key="0" value="0">Ground</option>);
+    }
+
+    return options;
+  };
+
+
+
+
+
+
 
 
 
@@ -301,6 +670,9 @@ function NewComponant() {
       .catch(err => console.error("Error fetching archived tenants:", err));
   }, []);
   useEffect(() => {
+    fetchRooms();
+    fetchAllTenants();
+
     axios.get('https://whitecollarassociates.onrender.com/api/rooms')
       .then(response => setRoomsData(response.data))
       .catch(err => console.error("Failed to fetch rooms:", err));
@@ -321,6 +693,20 @@ function NewComponant() {
     );
   };
 
+  <button
+    onClick={() => navigate('https://whitecollarassociates.onrender.com/api/monthly-bills')}
+    style={{
+      padding: '10px 20px',
+      margin: '10px 0',
+      backgroundColor: '#28a745',
+      color: 'white',
+      border: 'none',
+      borderRadius: '5px',
+      cursor: 'pointer'
+    }}
+  >
+    Monthly Bills
+  </button>
 
 
 
@@ -335,6 +721,35 @@ function NewComponant() {
         console.error("Error fetching occupied rooms:", error);
       });
   }, []);
+
+
+
+
+  useEffect(() => {
+    if (!selectedTenant) return;
+
+    const rent = Number(getLatestRentAmount(selectedTenant)) || 0;
+    const lightValue = getLatestLightBillAmount(selectedTenant.roomNo);
+    const light = lightValue ? Number(lightValue) : 0;
+    const total = rent + light;
+
+    const paid = (cashAmount || 0) + (onlineAmount || 0);
+    const remaining = total - paid;
+
+    setRemainingAmount(remaining);
+
+    if (remaining <= 0) {
+      setPaymentStatus('Paid');
+    } else {
+      setPaymentStatus('Pending');
+    }
+  }, [cashAmount, onlineAmount, selectedTenant]);
+
+
+
+
+
+
 
 
 
@@ -430,32 +845,47 @@ function NewComponant() {
     }
 
     try {
-      const formData = new FormData();
+      const formDataObj = new FormData();
 
-      // ✅ Append all fields except 'adharno' and 'adharFile'
-      const { srNo, ...rest } = newTenant; // 🔥 EXCLUDE srNo
       for (const key in newTenant) {
         if (
-
-          key !== 'adharFile' && // ❗ handled separately
+          key !== 'adharFile' &&
           newTenant[key] !== undefined &&
           newTenant[key] !== null
         ) {
-          formData.append(key, newTenant[key]);
+          formDataObj.append(key, newTenant[key]);
         }
       }
 
-      // ✅ Append adharFile separately if it exists
       if (newTenant.adharFile) {
-        formData.append('adharFile', newTenant.adharFile);
+        formDataObj.append('adharFile', newTenant.adharFile);
       }
 
-      // ✅ Axios request
-      await axios.post(`${apiUrl}forms`, formData, {
+      // Add tenant API call
+      const response = await axios.post(`${apiUrl}forms`, formDataObj, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
+      const newTenantData = response.data;
+
+      // ✅ Instantly update UI without waiting
+      setFormData(prev => [...prev, newTenantData]);
 
       alert('Tenant added successfully!');
+      // Reload current page
+      window.location.reload();
+
+      // ✅ Generate monthly bills
+      try {
+        await axios.post('https://whitecollarassociates.onrender.com/api/monthly-bills/generate');
+      } catch (genErr) {
+        console.error('Generate API error:', genErr);
+      }
+
+      // ✅ Delay backend sync so DB has time to save
+      setTimeout(() => {
+        fetchAllTenants();
+      }, 300);
+
       setShowAddModal(false);
       setNewTenant({
         name: '',
@@ -470,31 +900,13 @@ function NewComponant() {
         depositAmount: '',
         adharFile: null,
       });
+
     } catch (error) {
       console.error("Add tenant error:", error);
-
-      if (error.response) {
-        console.error("Error Response Data:", error.response.data);
-        console.error("Error Status Code:", error.response.status);
-      } else if (error.request) {
-        console.error("No response received:", error.request);
-      } else {
-        console.error("Axios setup error:", error.message);
-      }
-      let errMsg = "Failed to add tenant.";
-
-      if (error.response?.data?.error) {
-        errMsg = error.response.data.error;
-      } else if (error.response?.data?.message) {
-        errMsg = error.response.data.message;
-      } else if (error.message) {
-        errMsg = error.message;
-      }
-
-      alert(errMsg);
-
+      alert(error.response?.data?.message || "Failed to add tenant.");
     }
   };
+
 
 
 
@@ -717,6 +1129,10 @@ function NewComponant() {
     setEditingTenant(tenant);
     setEditRentAmount(rentAmount);
     setEditRentDate(date || new Date().toISOString().split('T')[0]);
+    // Reload current page
+
+
+
   };
 
   const handleDelete = async (tenant) => {
@@ -846,17 +1262,33 @@ function NewComponant() {
   const handleSave = async () => {
     if (!editingTenant) return;
     try {
-      await axios.put(`${apiUrl}form/${editingTenant._id}`, {
+      const updatedData = {
         rentAmount: editRentAmount,
         date: editRentDate,
         month: new Date(editRentDate).toLocaleString('default', { month: 'short', year: '2-digit' })
-      });
-      setEditingTenant(null);
-      // window.location.reload();
+      };
+
+      const res = await axios.put(`${apiUrl}form/${editingTenant._id}`, updatedData);
+
+      // ✅ Update local state (formData or whatever state holds tenant list)
+      setFormData(prev =>
+        prev.map(tenant =>
+          tenant._id === editingTenant._id
+            ? {
+              ...tenant,
+              rents: [...tenant.rents, updatedData]  // appending new rent data
+            }
+            : tenant
+        )
+      );
+
+      setEditingTenant(null); // close modal or form
+
     } catch (error) {
       alert('Failed to update rent');
     }
   };
+
   const navigate = useNavigate();
   const handleNavigation = (path) => {
     navigate(path);
@@ -1078,6 +1510,35 @@ function NewComponant() {
 
 
 
+        <button
+          className="btn me-2"
+          style={{
+            backgroundColor: "#3db7b1",
+            color: "white",
+            border: "none",
+            padding: "10px 16px",
+            borderRadius: "6px",
+            fontWeight: "bold",
+            transition: "all 0.3s ease",
+            boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+            cursor: "pointer"
+          }}
+          onMouseOver={(e) => {
+            e.target.style.backgroundColor = "#319b96";
+            e.target.style.transform = "scale(1.05)";
+            e.target.style.boxShadow = "0 6px 12px rgba(0,0,0,0.3)";
+          }}
+          onMouseOut={(e) => {
+            e.target.style.backgroundColor = "#3db7b1";
+            e.target.style.transform = "scale(1)";
+            e.target.style.boxShadow = "0 4px 8px rgba(0,0,0,0.2)";
+          }}
+          onClick={() => {
+            navigate('https://whitecollarassociates.onrender.com/api/monthly-bills');
+          }}
+        >
+          <FaPlus className="me-1" /> MonthlyBills
+        </button>
 
 
 
@@ -1253,8 +1714,22 @@ function NewComponant() {
       <div className="card shadow-sm">
         <div className="card-body">
           <h5 className="fw-bold mb-3">Room-wise Rent and Deposit Tracker</h5>
+          <div className="mb-3 d-flex align-items-center">
+            <label htmlFor="wingSelect" className="form-label me-2 mb-0 fw-semibold">Select Wing:</label>
+            <select
+              id="wingSelect"
+              className="form-select w-auto"
+              value={selectedWing}
+              onChange={(e) => setSelectedWing(e.target.value)}
+            >
+              <option value="All Wings">All Wings</option>
+              <option value="A">A Wing</option>
+              <option value="B">B Wing</option>
+              <option value="K">K Wing</option>
+            </select>
 
 
+          </div>
 
           <div className="table-responsive">
             <table className="table align-middle">
@@ -1266,6 +1741,7 @@ function NewComponant() {
                   <th>Rent</th>
                   {/* <th>Rent Date</th> */}
                   <th>Due</th>
+                  <th>Total Amount</th>
 
                   <th>Rent Status</th>
                   {/* <th>Deposit Status</th> */}
@@ -1273,7 +1749,9 @@ function NewComponant() {
                 </tr>
               </thead>
               <tbody>
+
                 {formData
+
                   .filter((tenant) => {
                     const name = tenant.name?.toLowerCase() || '';
                     const bed = tenant.bedNo?.toString() || '';
@@ -1281,20 +1759,27 @@ function NewComponant() {
                     const leaveDate = leaveDates[tenant._id];
                     const isLeaved = leaveDate && new Date(leaveDate) < new Date();
 
+                    // ✅ Extract wing from roomNo (e.g., A101 → A)
+                    const roomNo = tenant.roomNo?.toString().trim().toUpperCase() || '';
+                    const derivedWing = roomNo.charAt(0); // First character
+
+                    const matchesWing =
+                      selectedWing === 'All Wings' || derivedWing === selectedWing.toUpperCase();
+
                     return (
-                      !isLeaved && // 👈 EXCLUDE tenants who already left
+                      !isLeaved &&
+                      matchesWing &&
                       (name.includes(searchText.toLowerCase()) || bed.includes(searchText)) &&
                       (selectedYear === 'All Records' || joinYear === Number(selectedYear))
                     );
-
-
-
-                    const room = roomsData.find(r => String(r.roomNo) === String(tenant.roomNo));
-                    if (!room || room.wing !== selectedWing) return false;
-                    return true;
-
-
                   })
+
+
+
+
+
+
+
 
                   .map((tenant) => {
                     const { current, previous } = getDisplayedRent(tenant.rents);
@@ -1378,25 +1863,73 @@ function NewComponant() {
                         }}>
                           ₹{dueAmount.toLocaleString('en-IN')}
                         </td>
+                        <td
+                          style={{ cursor: 'pointer', color: 'blue' }}
+                          onClick={() => {
+                            const bill = findBillForTenant(tenant._id);
+                            setSelectedTenant(tenant);
+                            setCashAmount(bill?.cashPayment || 0);
+                            setOnlineAmount(bill?.onlinePayment || 0);
+                            setIsModalOpen(true);
+                          }}
+                        >
+                          ₹{(() => {
+                            const bill = findBillForTenant(tenant._id);
+                            if (bill && bill.totalAmount != null && bill.totalAmount !== 0) {
+                              return bill.totalAmount.toLocaleString('en-IN');
+                            }
+                            // fallback calculation if no bill or totalAmount is missing
+                            const rent = Number(getLatestRentAmount(tenant)) || 0;
+                            const light = getLatestLightBillAmount(tenant.roomNo);
+                            const lightAmount = light ? Number(light) : 0;
 
+                            const total = rent + lightAmount;
+                            return (total === rent ? rent : total).toLocaleString('en-IN');
+                          })()}
+                        </td>
 
                         <td>
-                          <span
-                            className={`badge rounded-pill px-3 py-2 ${dueAmount === 0 ? 'bg-success' : 'bg-warning text-dark'}`}
-                            style={{ cursor: dueAmount > 0 ? 'pointer' : 'default' }}
-                            onClick={() => {
-                              if (dueAmount > 0) {
-                                const pending = getPendingMonthsForStatus(tenant.rents, tenant.joiningDate);
-                                console.log('Pending Months:', pending); // DEBUG LOG
-                                setStatusMonths(pending);
-                                setStatusTenantName(tenant.name);
-                                setShowStatusModal(true);
-                              }
-                            }}
-                          >
-                            {dueAmount === 0 ? 'Paid' : 'Pending'}
-                          </span>
+                          {(() => {
+                            const bill = findBillForTenant(tenant._id);
+
+                            const rent = Number(getLatestRentAmount(tenant)) || 0;
+                            const lightValue = getLatestLightBillAmount(tenant.roomNo);
+                            const light = lightValue ? Number(lightValue) : 0;
+
+                            const total = rent + light;
+
+                            const cash = bill?.cashPayment ?? 0;
+                            const online = bill?.onlinePayment ?? 0;
+
+                            const remaining = Math.max(total - (cash + online), 0);
+
+                            return (
+                              <span
+                                className={`badge rounded-pill px-3 py-2 ${remaining <= 0 ? "bg-success" : "bg-warning text-dark"
+                                  }`}
+                                style={{ cursor: remaining > 0 ? "pointer" : "default" }}
+                                onClick={() => {
+                                  setSelectedTenant(tenant);
+                                  setCashAmount(cash);
+                                  setOnlineAmount(online);
+                                  setDueAmountForModal(remaining);
+                                  setIsModalOpen(true);
+                                }}
+                              >
+                                {remaining <= 0
+                                  ? "Paid"
+                                  : `Pending ₹${remaining.toLocaleString("en-IN")}`}
+                              </span>
+                            );
+                          })()}
                         </td>
+
+
+
+
+
+
+
 
 
                         {/* <td>
@@ -1450,6 +1983,94 @@ function NewComponant() {
 
 
 
+            {isModalOpen && selectedTenant && (
+              <div className="modal-backdrop" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 10 }}>
+                <div
+                  className="modal-content"
+                  style={{
+                    backgroundColor: "white",
+                    padding: 20,
+                    borderRadius: 10,
+                    maxWidth: 400,
+                    margin: "100px auto",
+                  }}
+                >
+                  <h5>Payment Entry for {selectedTenant.name}</h5>
+
+                  <div className="mb-2">
+                    <label>Cash Amount:</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={cashAmount}
+                      onChange={(e) => setCashAmount(Number(e.target.value))}
+                    />
+                  </div>
+
+                  <div className="mb-2">
+                    <label>Online Amount:</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={onlineAmount}
+                      onChange={(e) => setOnlineAmount(Number(e.target.value))}
+                    />
+                  </div>
+
+                  <div className="mb-2">
+                    <strong>
+                      Total amount: ₹
+                      {(() => {
+                        const rent = Number(getLatestRentAmount(selectedTenant)) || 0;
+                        const lightValue = getLatestLightBillAmount(selectedTenant.roomNo);
+                        const light = lightValue ? Number(lightValue) : 0;
+                        return (rent + light).toLocaleString('en-IN');
+                      })()}
+                    </strong>
+                  </div>
+
+                  <div className="mb-2">
+                    <strong>
+                      Pending Amount: ₹
+                      {(() => {
+                        const rent = Number(getLatestRentAmount(selectedTenant)) || 0;
+                        const lightValue = getLatestLightBillAmount(selectedTenant.roomNo);
+                        const light = lightValue ? Number(lightValue) : 0;
+                        const total = rent + light;
+                        const paid = (cashAmount || 0) + (onlineAmount || 0);
+                        return Math.max(total - paid, 0).toLocaleString('en-IN');
+                      })()}
+                    </strong>
+                  </div>
+
+
+
+
+                  <button
+                    className="btn btn-success me-2"
+                    onClick={handleSaveStatus}
+                    disabled={isSaving}  // disable while saving
+                  >
+                    {isSaving ? "Saving..." : "Save"}
+                  </button>
+
+                  <button className="btn btn-secondary" onClick={() => setIsModalOpen(false)}>
+                    Cancel
+                  </button>
+
+                  {/* Add payment status display here */}
+                  {paymentStatus && (
+                    <div style={{ marginTop: "1rem" }}>
+                      <p>
+                        Status: <strong>{paymentStatus}</strong>
+                      </p>
+                      <p>Remaining Amount: ₹{remainingAmount.toFixed(2)}</p>
+                    </div>
+                  )}
+                </div>
+
+              </div>
+            )}
 
 
 
@@ -1665,15 +2286,20 @@ function NewComponant() {
                                 roomNo: '',
                               })
                             }
-                            disabled={!newTenant.wing}
+                            disabled={!newTenant.wing} // Disabled until wing is selected
                           >
                             <option value="">Select Floor</option>
                             <option value="1">1st</option>
                             <option value="2">2nd</option>
                             <option value="3">3rd</option>
                             <option value="4">4th</option>
+                            {/* Add Ground floor only for A and K wings */}
+                            {newTenant.wing === 'A' || newTenant.wing === 'K' ? (
+                              <option value="0">Ground</option>
+                            ) : null}
                           </select>
                         </div>
+
 
                         {/* Room */}
                         <div className="col-12 col-md-6">
@@ -1691,18 +2317,20 @@ function NewComponant() {
                             <option value="">Select Room</option>
                             {roomData
                               .filter((room) => {
-                                const isSameWing = room.wing === newTenant.wing;
-                                const isSameFloor =
-                                  String(room.floor) === String(newTenant.floorNo);
+                                const matchWing =
+                                  selectedWing === "All Wings" || room.wing === selectedWing;
+                                const matchFloor = String(room.floor) === String(newTenant.floorNo);
                                 const roomId = `${room.floor}-${room.roomNo}`;
                                 const isOccupied = occupiedRoomsList.includes(roomId);
-                                return isSameWing && isSameFloor && !isOccupied;
+
+                                return matchWing && matchFloor && !isOccupied;
                               })
                               .map((room) => (
                                 <option key={room.roomNo} value={room.roomNo}>
                                   {room.roomNo}
                                 </option>
                               ))}
+
                           </select>
                         </div>
                       </div>
@@ -1757,7 +2385,10 @@ function NewComponant() {
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">Pending Months for {statusTenantName}</h5>
+
+
                 <button type="button" className="btn-close" onClick={() => setShowStatusModal(false)}></button>
+
               </div>
               <div className="modal-body">
                 {statusMonths.length > 0 ? (
