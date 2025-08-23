@@ -101,12 +101,69 @@ function NewComponant() {
 
 
 
+  // calculate totals dynamically
+  // const totalAmount = bills.reduce((sum, b) => sum + (Number(b.totalAmount) || 0), 0);
+
+
+
+
+
+
+
+
+
+
+
   const [monthlyBills, setMonthlyBills] = useState([]);
 
 
 
   const [dueAmountForModal, setDueAmountForModal] = useState(0);
 
+  const [yearlyDataMap, setYearlyDataMap] = useState({});
+
+
+  const fetchYearlySummary = async (tenantId, year) => {
+    try {
+      const res = await fetch(`${API_BASE}/monthly-bills/tenant/${tenantId}/summary?year=${year}`);
+      const data = await res.json();
+      setYearlyDataMap(prev => ({
+        ...prev,
+        [tenantId]: data,   // ✅ store only for this tenant
+      }));
+    } catch (err) {
+      console.error("Fetch yearly bills error:", err);
+    }
+  };
+
+
+
+
+
+
+
+
+
+
+
+  useEffect(() => {
+    if (showDetailsModal && selectedTenant) {
+      const year = new Date().getFullYear();
+      fetch(`/api/monthly-bills/tenant/${selectedTenant._id}/summary?year=${year}`)
+        .then(res => res.json())
+        .then(data => {
+          if (!selectedTenant?._id) return; // ✅ just stop if no tenant selected
+          setYearlyDataMap(prev => ({
+            ...prev,
+            [selectedTenant._id]: data,
+          }));
+        })
+
+
+
+        .catch(err => console.error("Fetch yearly bills error:", err));
+    }
+  }, [showDetailsModal, selectedTenant]);
 
 
   const getBillForTenant = (tenantId) => {
@@ -161,9 +218,239 @@ function NewComponant() {
 
 
 
+  const [selectedCash, setSelectedCash] = useState(0);
+  const [selectedOnline, setSelectedOnline] = useState(0);
+  const [selectedMonthIndex, setSelectedMonthIndex] = useState(null); // 0=Jan, 7=Aug etc.
 
 
 
+
+
+  // tenant = tenant object
+  // monthIndex = the row’s month (0=Jan ... 11=Dec)
+  // cash, online = values from Room-wise tracker
+  const handleOpenDetails = (tenant, monthIndex, cash, online) => {
+    setSelectedTenant(tenant);
+    setSelectedMonthIndex(monthIndex);
+    setSelectedCash(Number(cash) || 0);
+    setSelectedOnline(Number(online) || 0);
+    setShowDetailsModal(true);
+  };
+
+
+
+
+
+  const updateMonthPayment = (tenantId, month, year, value, type) => {
+    fetch(`/api/monthly-bills/tenant/${tenantId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        month,
+        year,
+        [type === "cash" ? "cashPayment" : "onlinePayment"]: Number(value)
+      })
+    })
+      .then(res => res.json())
+      .then(updated => {
+        // Refresh state with updated bill
+        setYearlyDataMap(prev => {
+          const tenantData = prev[selectedTenant._id];
+          if (!tenantData) return prev;
+
+          const updatedBills = tenantData.bills.map(bill =>
+            bill.month === updated.bill.month && bill.year === updated.bill.year
+              ? updated.bill
+              : bill
+          );
+
+          const summary = {
+            totalAmount: updatedBills.reduce((sum, b) => sum + (b.totalAmount || 0), 0),
+            paidAmount: updatedBills.reduce((sum, b) => sum + (b.paidAmount || 0), 0),
+            cashPayment: updatedBills.reduce((sum, b) => sum + (b.cashPayment || 0), 0),
+            onlinePayment: updatedBills.reduce((sum, b) => sum + (b.onlinePayment || 0), 0),
+            remainingAmount: updatedBills.reduce((sum, b) => sum + (b.remainingAmount || 0), 0),
+          };
+
+          return {
+            ...prev,
+            [selectedTenant._id]: { ...tenantData, bills: updatedBills, summary },
+          };
+        });
+
+      })
+      .catch(err => console.error("Update payment error:", err));
+  };
+
+
+
+
+
+  const handleOpenPaymentModal = (tenant) => {
+    setSelectedTenant(tenant);
+    setIsModalOpen(true);
+
+    // Fetch yearly summary immediately for this tenant
+    const year = new Date().getFullYear();
+    fetch(`/api/monthly-bills/tenant/${tenant._id}/summary?year=${year}`)
+      .then(res => res.json())
+      .then(data => {
+        setYearlyDataMap(prev => ({
+          ...prev,
+          [tenant._id]: data,
+        }));
+      })
+      .catch(err => console.error("Error fetching rent history:", err));
+  };
+
+
+
+
+  const getWingTotals = () => {
+    let totalCash = 0;
+    let totalOnline = 0;
+    let totalOverall = 0;
+
+    formData.forEach(tenant => {
+      // ✅ Extract wing from roomNo (first char, e.g., A101 → A)
+      const roomNo = tenant.roomNo?.toString().trim().toUpperCase() || '';
+      const derivedWing = roomNo.charAt(0);
+
+      if (selectedWing === "All Wings" || derivedWing === selectedWing.toUpperCase()) {
+        const bill = findBillForTenant(tenant._id);
+
+        const rent = Number(getLatestRentAmount(tenant)) || 0;
+        const light = Number(getLatestLightBillAmount(tenant.roomNo)) || 0;
+        const total = bill?.totalAmount ?? (rent + light);
+
+        const cash = bill?.cashPayment ?? 0;
+        const online = bill?.onlinePayment ?? 0;
+
+
+        totalCash += bill?.cashPayment ?? 0;
+        totalOnline += bill?.onlinePayment ?? 0;
+        totalOverall += cash + online;
+      }
+    });
+
+    return { totalCash, totalOnline, totalOverall };
+  };
+
+
+
+
+  const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+
+
+
+
+  // ---------- Helpers (paste above return in your component) ----------
+  const monthNames = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+
+  // Finds a bill in monthlyBills for a tenant + monthDate
+  const getBillForTenantMonth = (tenantId, monthDate) => {
+    if (!monthlyBills || !tenantId) return null;
+    const monthStr = monthNames[monthDate.getMonth()]; // 0 -> "jan", 7 -> "aug"
+    const year = monthDate.getFullYear();
+    return (
+      monthlyBills.find(
+        (b) =>
+          String(b.tenantId) === String(tenantId) &&
+          String(b.month).toLowerCase() === monthStr &&
+          Number(b.year) === Number(year)
+      ) || null
+    );
+  };
+
+  // Get recorded rent for the tenant for that month from tenant.rents
+  const getRentForMonth = (tenant, monthDate) => {
+    if (!tenant) return 0;
+    const m = monthDate.getMonth();
+    const y = monthDate.getFullYear();
+    const entry = (tenant?.rents || []).find((r) => {
+      const d = new Date(r.date);
+      return d.getMonth() === m && d.getFullYear() === y;
+    });
+    return Number(entry?.rentAmount || 0);
+  };
+
+  // Compute display values for a tenant & monthDate
+  const getDisplayForMonth = (tenant, tenantId, monthDate) => {
+    const bill = getBillForTenantMonth(tenantId, monthDate);
+
+    const cash = Number(bill?.cashPayment || 0);
+    const online = Number(bill?.onlinePayment || 0);
+
+    // If bill exists, paidAmount = cash + online (ignore DB paidAmount if it's always 0)
+    const paidAmount = bill ? (cash + online) : 0;
+
+    const expectedRent = getRentForMonth(tenant, monthDate);
+    const displayTotal = bill ? paidAmount : expectedRent;
+
+    // Status logic
+    const joiningDate = tenant?.joiningDate ? new Date(tenant.joiningDate) : null;
+    const rentStartMonth = joiningDate ? new Date(joiningDate.getFullYear(), joiningDate.getMonth(), 1) : null;
+    const isBeforeRentStart = rentStartMonth ? monthDate < rentStartMonth : false;
+    const isFutureMonth = monthDate > new Date();
+
+    let status;
+    if (isBeforeRentStart) status = "na";
+    else if (bill) {
+      status = Number(bill.remainingAmount || 0) > 0 ? "partial" : "paid";
+    } else if (isFutureMonth) status = "upcoming";
+    else if (expectedRent > 0) status = "pending";
+    else status = "na";
+
+    return { bill, cash, online, paidAmount, expectedRent, displayTotal, status };
+  };
+
+
+  // Totals for year (sums displayTotal/cash/online across 12 months, using same logic as table rows)
+  const getTotalsForYear = (tenantId, tenant, year) => {
+    let total = 0, cash = 0, online = 0;
+    for (let i = 0; i < 12; i++) {
+      const md = new Date(year, i, 1);
+      const vals = getDisplayForMonth(tenant, tenantId, md);
+      total += Number(vals.displayTotal || 0);
+      cash += Number(vals.cash || 0);
+      online += Number(vals.online || 0);
+    }
+    return { total, cash, online };
+  };
+
+
+
+
+
+
+
+
+
+
+
+
+  // const getPaymentsForMonth = (tenantId, monthDate) => {
+  //   const monthKey = monthDate.toLocaleString("default", { month: "short" }).toLowerCase(); // e.g. "aug"
+  //   const yearKey = monthDate.getFullYear();
+
+  //   const bill = monthlyBills.find(
+  //     b =>
+  //       String(b.tenantId) === String(tenantId) &&   // 🔹 force both to string
+  //       b.month?.toLowerCase() === monthKey &&
+  //       Number(b.year) === yearKey
+  //   );
+
+  //   if (!bill) {
+  //     return { cash: 0, online: 0, total: 0, status: "pending" };
+  //   }
+
+  //   return {
+  //     cash: bill.cashPayment ?? 0,
+  //     online: bill.onlinePayment ?? 0,
+  //     total: bill.paidAmount ?? 0,
+  //     status: bill.status ?? "pending"
+  //   };
+  // };
 
 
 
@@ -210,36 +497,110 @@ function NewComponant() {
 
 
 
+  // Make sure you have these helpers/variables in scope:
+  // - selectedTenant, selectedMonthIndex, cashAmount, onlineAmount
+  // - setIsSaving, setYearlyData, setIsModalOpen, setPaymentStatus, setRemainingAmount
+  // - monthNames: ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec']
+  // - getLatestRentAmount(selectedTenant) and getLatestLightBillAmount(roomNo) if you want POST fallback
 
-
+  const API_BASE = "https://whitecollarassociates.onrender.com/api";
 
   const handleSavePayment = async () => {
-    try {
-      if (!selectedTenant) return;
+    if (!selectedTenant) return;
+    if (cashAmount === undefined || onlineAmount === undefined) return;
 
-      // Send the update to the backend
-      const res = await axios.put(`${apiUrl}monthly-bills/${selectedTenant._id}`, {
-        cashPayment: Number(cashAmount),
-        onlinePayment: Number(onlineAmount),
+    setIsSaving(true);
+
+    try {
+      const year = new Date().getFullYear();
+      const monthIndex = Number.isInteger(selectedMonthIndex)
+        ? selectedMonthIndex
+        : new Date().getMonth();
+
+      const month = (monthNames?.[monthIndex] || "").toLowerCase();
+      if (!month) throw new Error("Invalid month selected");
+
+      const cash = Number(cashAmount) || 0;
+      const online = Number(onlineAmount) || 0;
+
+      // 1) Try to update existing monthly bill (PUT)
+      let res = await fetch(`${API_BASE}/monthly-bills/tenant/${selectedTenant._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ month, year, cashPayment: cash, onlinePayment: online }),
       });
 
-      // Get the updated bill object from the response
-      const updatedBill = res.data.bill;
+      // 2) If bill doesn't exist yet (404), create it (POST) with rent+light
+      if (res.status === 404) {
+        const rent = Number(getLatestRentAmount(selectedTenant)) || 0;
+        const lightVal = getLatestLightBillAmount(selectedTenant.roomNo);
+        const light = lightVal ? Number(lightVal) : 0;
 
-      // Update the monthlyBills array in state without refreshing
-      setMonthlyBills(prevBills =>
-        prevBills.map(bill =>
-          bill._id === updatedBill._id ? updatedBill : bill
-        )
+        res = await fetch(`${API_BASE}/monthly-bills`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            tenantId: selectedTenant._id,
+            roomNo: selectedTenant.roomNo,
+            month,
+            year,
+            rentAmount: rent,
+            lightBillAmount: light,
+            cashPayment: cash,
+            onlinePayment: online,
+          }),
+        });
+      }
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("Backend error:", text);
+        throw new Error("Failed to save payment");
+      }
+
+      // 3) Refresh yearly summary for just this tenant
+      const summaryRes = await fetch(
+        `${API_BASE}/monthly-bills/tenant/${selectedTenant._id}/summary?year=${year}`
       );
 
-      // Close the modal
-      setIsModalOpen(false);
+      if (!summaryRes.ok) {
+        const text = await summaryRes.text();
+        console.error("Summary fetch error:", text);
+        throw new Error("Failed to refresh yearly summary");
+      }
 
-    } catch (error) {
-      console.error("Error saving payment:", error);
+      const summaryData = await summaryRes.json();
+      setYearlyDataMap(prev => ({
+        ...prev,
+        [selectedTenant._id]: summaryData,
+      }));
+      // updates Rent History UI
+
+      // Optional: Keep modal open; show status+remaining
+      const totalForMonth = (() => {
+        const bill = summaryData.bills.find(b => b.month === month);
+        return (bill?.totalAmount || 0);
+      })();
+      const paidNow = cash + online;
+      const remainingNow = Math.max((totalForMonth || 0) - paidNow, 0);
+
+      setPaymentStatus(remainingNow === 0 ? "Paid" : paidNow > 0 ? "Partial" : "Pending");
+      setRemainingAmount(remainingNow);
+
+      alert(`✅ Payment saved for ${month.toUpperCase()} ${year} (Tenant: ${selectedTenant.name})`);
+
+      // If you want to close modal after save, uncomment:
+      // setIsModalOpen(false);
+    } catch (err) {
+      console.error("Error saving payment:", err);
+      alert("❌ Failed to save payment");
+    } finally {
+      setIsSaving(false);
     }
   };
+
+
+
   // Make sure this is correct
   const apiUrl1 = "https://whitecollarassociates.onrender.com/api/monthly-bills/";
 
@@ -681,6 +1042,8 @@ function NewComponant() {
 
   const NewComponant = () => {
     const navigate = useNavigate();
+
+
 
     return (
       <div>
@@ -1314,6 +1677,21 @@ function NewComponant() {
 
 
 
+
+
+
+
+
+
+  const { totalCash, totalOnline, totalOverall } = getWingTotals();
+
+
+
+
+
+
+
+
   if (loading) return <div className="text-center mt-5">Loading...</div>;
   if (error) return <div className="text-center text-danger mt-5">{error}</div>;
 
@@ -1698,6 +2076,25 @@ function NewComponant() {
             <h4 className="fw-bold text-danger">{formData.filter(d => Number(d.depositAmount) > 0).length}</h4>
           </div>
         </div>
+
+
+
+
+        <div className="mt-4 p-3 bg-light border rounded">
+          <h6>
+            {selectedWing === "All Wings" ? "All Wings" : `${selectedWing} Wing`} —{" "}
+            {new Date().toLocaleString("default", { month: "long", year: "numeric" })}
+          </h6>
+          <p><strong>Total (Paid):</strong> ₹{totalOverall.toLocaleString("en-IN")}</p>
+          <p className="text-success"><strong>Cash:</strong> ₹{totalCash.toLocaleString("en-IN")}</p>
+          <p className="text-primary"><strong>Online:</strong> ₹{totalOnline.toLocaleString("en-IN")}</p>
+        </div>
+
+
+
+
+
+
       </div>
 
 
@@ -1727,6 +2124,15 @@ function NewComponant() {
               <option value="B">B Wing</option>
               <option value="K">K Wing</option>
             </select>
+
+
+
+
+
+
+
+
+
 
 
           </div>
@@ -1765,6 +2171,13 @@ function NewComponant() {
 
                     const matchesWing =
                       selectedWing === 'All Wings' || derivedWing === selectedWing.toUpperCase();
+
+
+
+
+
+
+
 
                     return (
                       !isLeaved &&
@@ -1984,51 +2397,88 @@ function NewComponant() {
 
 
             {isModalOpen && selectedTenant && (
-              <div className="modal-backdrop" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 10 }}>
+              <div
+                className="modal-backdrop"
+                style={{
+                  position: "fixed",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: "rgba(0,0,0,0.5)",
+                  zIndex: 10,
+                }}
+              >
                 <div
                   className="modal-content"
                   style={{
                     backgroundColor: "white",
                     padding: 20,
                     borderRadius: 10,
-                    maxWidth: 400,
+                    maxWidth: 420,
                     margin: "100px auto",
                   }}
                 >
                   <h5>Payment Entry for {selectedTenant.name}</h5>
 
+                  {/* Month Selector */}
+                  <div className="mb-2">
+                    <label>Select Month:</label>
+                    <select
+                      className="form-select"
+                      value={
+                        Number.isInteger(selectedMonthIndex)
+                          ? selectedMonthIndex
+                          : new Date().getMonth()
+                      }
+                      onChange={(e) => setSelectedMonthIndex(Number(e.target.value))}
+                    >
+                      {monthNames.map((m, i) => (
+                        <option key={i} value={i}>
+                          {m.toUpperCase()} {new Date().getFullYear()}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Cash Amount */}
                   <div className="mb-2">
                     <label>Cash Amount:</label>
                     <input
                       type="number"
                       className="form-control"
-                      value={cashAmount}
-                      onChange={(e) => setCashAmount(Number(e.target.value))}
+                      value={cashAmount ?? 0}
+                      onChange={(e) => setCashAmount(Number(e.target.value) || 0)}
+                      placeholder="Enter Cash Amount"
                     />
                   </div>
 
+                  {/* Online Amount */}
                   <div className="mb-2">
                     <label>Online Amount:</label>
                     <input
                       type="number"
                       className="form-control"
-                      value={onlineAmount}
-                      onChange={(e) => setOnlineAmount(Number(e.target.value))}
+                      value={onlineAmount ?? 0}
+                      onChange={(e) => setOnlineAmount(Number(e.target.value) || 0)}
+                      placeholder="Enter Online Amount"
                     />
                   </div>
 
+                  {/* Totals (from your helpers) */}
                   <div className="mb-2">
                     <strong>
-                      Total amount: ₹
+                      Total Rent + Light: ₹
                       {(() => {
                         const rent = Number(getLatestRentAmount(selectedTenant)) || 0;
                         const lightValue = getLatestLightBillAmount(selectedTenant.roomNo);
                         const light = lightValue ? Number(lightValue) : 0;
-                        return (rent + light).toLocaleString('en-IN');
+                        return (rent + light).toLocaleString("en-IN");
                       })()}
                     </strong>
                   </div>
 
+                  {/* Pending preview */}
                   <div className="mb-2">
                     <strong>
                       Pending Amount: ₹
@@ -2038,37 +2488,44 @@ function NewComponant() {
                         const light = lightValue ? Number(lightValue) : 0;
                         const total = rent + light;
                         const paid = (cashAmount || 0) + (onlineAmount || 0);
-                        return Math.max(total - paid, 0).toLocaleString('en-IN');
+                        return Math.max(total - paid, 0).toLocaleString("en-IN");
                       })()}
                     </strong>
                   </div>
 
-
-
-
+                  {/* Buttons */}
                   <button
                     className="btn btn-success me-2"
-                    onClick={handleSaveStatus}
-                    disabled={isSaving}  // disable while saving
+                    onClick={handleSavePayment}
+                    disabled={isSaving}
                   >
                     {isSaving ? "Saving..." : "Save"}
                   </button>
 
-                  <button className="btn btn-secondary" onClick={() => setIsModalOpen(false)}>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => setIsModalOpen(false)}
+                  >
                     Cancel
                   </button>
 
-                  {/* Add payment status display here */}
+                  {/* Status */}
                   {paymentStatus && (
                     <div style={{ marginTop: "1rem" }}>
                       <p>
-                        Status: <strong>{paymentStatus}</strong>
+                        Status:{" "}
+                        <strong
+                          className={
+                            paymentStatus === "Paid" ? "text-success" : "text-danger"
+                          }
+                        >
+                          {paymentStatus}
+                        </strong>
                       </p>
-                      <p>Remaining Amount: ₹{remainingAmount.toFixed(2)}</p>
+                      <p>Remaining Amount: ₹{Number(remainingAmount || 0).toLocaleString("en-IN")}</p>
                     </div>
                   )}
                 </div>
-
               </div>
             )}
 
@@ -2393,14 +2850,48 @@ function NewComponant() {
               <div className="modal-body">
                 {statusMonths.length > 0 ? (
                   <ul className="list-group">
-                    {statusMonths.map((month, idx) => (
-                      <li key={idx} className="list-group-item text-danger">{month}</li>
-                    ))}
+                    {statusMonths.map((month, idx) => {
+                      const monthIndex = new Date(`${month} 1, ${new Date().getFullYear()}`).getMonth();
+                      const monthDate = new Date(new Date().getFullYear(), monthIndex, 1);
+
+                      const bill = getBillForTenantMonth(selectedTenant?._id, monthDate);
+                      const cash = Number(bill?.cashPayment || 0);
+                      const online = Number(bill?.onlinePayment || 0);
+                      const paidTotal = Number(bill?.paidAmount || 0);
+
+                      const expectedRent = getRentForMonth(selectedTenant, monthDate);
+                      const displayTotal = bill ? paidTotal : expectedRent;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                      return (
+                        <li key={idx} className="list-group-item">
+                          <strong>{month}</strong> —
+                          <span className="text-success"> Cash: ₹{cash}</span> |
+                          <span className="text-primary"> Online: ₹{online}</span>
+                        </li>
+                      );
+                    })}
+
                   </ul>
                 ) : (
                   <p className="text-success">No pending months!</p>
                 )}
               </div>
+
               <div className="modal-footer">
                 <button className="btn btn-secondary" onClick={() => setShowStatusModal(false)}>Close</button>
               </div>
@@ -2525,75 +3016,250 @@ function NewComponant() {
 
 
 
-      {/* show details model */}
+      {showDetailsModal && selectedTenant && (() => {
+        const year = new Date().getFullYear();
+        const yearTotals = selectedTenant
+          ? getTotalsForYear(selectedTenant?._id, selectedTenant, year)
+          : { total: 0, cash: 0, online: 0 };
 
-      {showDetailsModal && selectedTenant && (
-        <div className="modal d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-lg">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Tenant Details - {selectedTenant.name}</h5>
-                <button className="btn-close" onClick={() => setShowDetailsModal(false)}></button>
-              </div>
-              <div className="modal-body">
-                {/* Personal Info */}
-                <h6>Personal Information</h6>
-                <ul className="list-group mb-3">
-                  <li className="list-group-item">Name:  {selectedTenant.name}</li>
-                  <li className="list-group-item">Room No: {selectedTenant.roomNo}</li>
-                  {/* <li className="list-group-item">Bed No: {selectedTenant.bedNo}</li> */}
-                  <li className="list-group-item">Phone: {selectedTenant.phoneNo}</li>
-                  <li className="list-group-item">Joining Date: {new Date(selectedTenant.joiningDate).toLocaleDateString()}</li>
-                  <li className="list-group-item">Deposit: ₹{Number(selectedTenant.depositAmount || 0).toLocaleString('en-IN')}</li>
-                  <li className="list-group-item">Address: {selectedTenant.address}</li>
-                  {/* <li className="list-group-item">Company Address: {selectedTenant.companyAddress}</li> */}
-                </ul>
+        return (
+          <div
+            className="modal d-block"
+            tabIndex="-1"
+            style={{
+              backgroundColor: "rgba(0,0,0,0.5)",
+            }}
+          >
+            <div className="modal-dialog modal-lg modal-dialog-centered">
+              <div
+                className="modal-content"
+                style={{
+                  borderRadius: "8px",
+                  overflow: "hidden",
+                  fontFamily: "Arial, sans-serif",
+                  fontSize: "14px",
+                }}
+              >
+                {/* Header */}
+                <div
+                  className="modal-header"
+                  style={{
+                    background: "#f5f6fa",
+                    color: "#333",
+                    padding: "12px 18px",
+                    borderBottom: "1px solid #ddd",
+                  }}
+                >
+                  <h5
+                    className="modal-title"
+                    style={{
+                      fontSize: "1.2rem",
+                      fontWeight: "500",
+                      margin: 0,
+                    }}
+                  >
+                    Tenant Details - {selectedTenant.name}
+                  </h5>
+                  <button
+                    className="btn-close"
+                    onClick={() => setShowDetailsModal(false)}
+                  ></button>
+                </div>
 
-                {/* Rent Info */}
-                <h6>Rent History ({new Date().getFullYear()})</h6>
-                <ul className="list-group">
-                  {Array.from({ length: 12 }, (_, i) => {
-                    const monthDate = new Date(new Date().getFullYear(), i, 1);
-                    const key = monthDate.toLocaleString('default', { month: 'short' }) + '-' + String(monthDate.getFullYear()).slice(-2);
+                {/* Body */}
+                <div className="modal-body" style={{ padding: "18px" }}>
+                  {/* Personal Info */}
+                  <h6
+                    className="mb-3"
+                    style={{
+                      fontSize: "1rem",
+                      fontWeight: "600",
+                      color: "#444",
+                      textAlign: "left",
+                      marginBottom: "10px",
+                    }}
+                  >
+                    Personal Information
+                  </h6>
 
-                    const rent = selectedTenant.rents?.find(r =>
-                      new Date(r.date).getMonth() === i &&
-                      new Date(r.date).getFullYear() === monthDate.getFullYear()
-                    );
+                  <div
+                    className="mb-4"
+                    style={{
+                      border: "1px solid #eee",
+                      borderRadius: "6px",
+                      padding: "12px 15px",
+                      background: "#fff",
+                    }}
+                  >
+                    <p style={{ margin: "6px 0", textAlign: "left" }}>
+                      <strong style={{ color: "#555" }}>Name:</strong> {selectedTenant.name}
+                    </p>
+                    <p style={{ margin: "6px 0", textAlign: "left" }}>
+                      <strong style={{ color: "#555" }}>Room No:</strong> {selectedTenant.roomNo}
+                    </p>
+                    <p style={{ margin: "6px 0", textAlign: "left" }}>
+                      <strong style={{ color: "#555" }}>Phone:</strong> {selectedTenant.phoneNo}
+                    </p>
+                    <p style={{ margin: "6px 0", textAlign: "left" }}>
+                      <strong style={{ color: "#555" }}>Joining Date:</strong>{" "}
+                      {new Date(selectedTenant.joiningDate).toLocaleDateString()}
+                    </p>
+                    <p style={{ margin: "6px 0", textAlign: "left" }}>
+                      <strong style={{ color: "#555" }}>Deposit:</strong> ₹
+                      {Number(selectedTenant.depositAmount || 0).toLocaleString("en-IN")}
+                    </p>
+                    <p style={{ margin: "6px 0", textAlign: "left" }}>
+                      <strong style={{ color: "#555" }}>Address:</strong> {selectedTenant.address}
+                    </p>
+                  </div>
 
-                    const isPast = monthDate < new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-                    const joiningDate = new Date(selectedTenant.joiningDate);
-                    const rentStartMonth = new Date(joiningDate.getFullYear(), joiningDate.getMonth() + 1, 1);
-                    const isFutureMonth = monthDate > new Date();
-                    const isBeforeRentStart = monthDate < rentStartMonth;
+                  {/* Rent History Table (unchanged) */}
+                  <h6
+                    className="mb-3"
+                    style={{
+                      fontSize: "1rem",
+                      fontWeight: "600",
+                      color: "#444",
+                      textAlign: "left",
+                    }}
+                  >
+                    Rent History ({year})
+                  </h6>
+
+                  <div className="table-responsive">
+                    <table className="table table-bordered table-striped align-middle text-center">
+                      <thead className="table-light">
+                        <tr>
+                          <th>Month</th>
+                          <th>Total Amount</th>
+                          <th>Cash</th>
+                          <th>Online</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(() => {
+                          const yearlyData = yearlyDataMap[selectedTenant._id];
+
+                          // 🔹 Build all bills for the year
+                          const bills = months.map((m) => {
+                            const billFromSummary = yearlyData?.bills?.find(
+                              (b) => b.month === m && b.year === year
+                            );
+                            const billFromState = monthlyBills.find(
+                              (b) =>
+                                (b.tenantId?._id === selectedTenant._id ||
+                                  b.tenantId === selectedTenant._id) &&
+                                String(b.month).toLowerCase() === m &&
+                                Number(b.year) === year
+                            );
+                            return (
+                              billFromSummary ||
+                              billFromState || {
+                                month: m,
+                                year,
+                                totalAmount: 0,
+                                cashPayment: 0,
+                                onlinePayment: 0,
+                                status: "pending",
+                              }
+                            );
+                          });
+
+                          // 🔹 Calculate totals from bills
+                          const totalAmount = bills.reduce(
+                            (sum, b) => sum + (Number(b.totalAmount) || 0),
+                            0
+                          );
+                          const totalCash = bills.reduce(
+                            (sum, b) => sum + (Number(b.cashPayment) || 0),
+                            0
+                          );
+                          const totalOnline = bills.reduce(
+                            (sum, b) => sum + (Number(b.onlinePayment) || 0),
+                            0
+                          );
+
+                          // 🔹 Render rows
+                          return (
+                            <>
+                              {bills.map((bill, i) => {
+                                const joiningDate = new Date(selectedTenant.joiningDate);
+                                const billDate = new Date(
+                                  bill.year,
+                                  months.indexOf(bill.month),
+                                  1
+                                );
+
+                                return (
+                                  <tr key={i}>
+                                    <td>{bill.month.toUpperCase()} {bill.year}</td>
+                                    <td>₹{Number(bill.totalAmount || 0).toLocaleString("en-IN")}</td>
+                                    <td className="text-success">₹{Number(bill.cashPayment || 0).toLocaleString("en-IN")}</td>
+                                    <td className="text-primary">₹{Number(bill.onlinePayment || 0).toLocaleString("en-IN")}</td>
+                                    <td>
+                                      {billDate < new Date(joiningDate.getFullYear(), joiningDate.getMonth(), 1) ? (
+                                        <span className="badge bg-secondary">N/A</span>
+                                      ) : bill.status === "paid" ? (
+                                        <span className="badge bg-success">Paid</span>
+                                      ) : bill.status === "partial" ? (
+                                        <span className="badge bg-warning text-dark">Partial</span>
+                                      ) : (
+                                        <span className="badge bg-danger">Pending</span>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+
+                              {/* ✅ Summary row */}
+                              {/* Summary row */}
+                              <tr className="table-info fw-bold">
+                                <td>Total (Year)</td>
+                                <td>
+                                  ₹{bills.reduce((sum, b) => sum + (Number(b.totalAmount) || 0), 0).toLocaleString("en-IN")}
+                                </td>
+                                <td className="text-success">
+                                  ₹{bills.reduce((sum, b) => sum + (Number(b.cashPayment) || 0), 0).toLocaleString("en-IN")}
+                                </td>
+                                <td className="text-primary">
+                                  ₹{bills.reduce((sum, b) => sum + (Number(b.onlinePayment) || 0), 0).toLocaleString("en-IN")}
+                                </td>
+                                <td>-</td>
+                              </tr>
+
+                            </>
+                          );
+                        })()}
+                      </tbody>
+                    </table>
+                  </div>
 
 
-                    return (
-                      <li key={i} className="list-group-item d-flex justify-content-between align-items-center">
-                        {monthDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
-                        {isBeforeRentStart ? (
-                          <span className="badge bg-secondary">Not Applicable</span>
-                        ) : rent ? (
-                          <span className="badge bg-success">₹{Number(rent.rentAmount).toLocaleString('en-IN')} on {new Date(rent.date).toLocaleDateString()}</span>
-                        ) : isFutureMonth ? (
-                          <span className="badge bg-warning text-dark">Upcoming</span>
-                        ) : (
-                          <span className="badge bg-danger">Pending</span>
-                        )}
-                      </li>
-                    );
+                </div>
 
-                  })}
-                </ul>
-              </div>
-              <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={() => setShowDetailsModal(false)}>Close</button>
+                {/* Footer */}
+                <div
+                  className="modal-footer"
+                  style={{ background: "#f9f9f9", borderTop: "1px solid #ddd" }}
+                >
+                  <button
+                    className="btn btn-outline-secondary"
+                    style={{
+                      borderRadius: "20px",
+                      padding: "6px 18px",
+                      fontSize: "14px",
+                    }}
+                    onClick={() => setShowDetailsModal(false)}
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
-
+        );
+      })()}
 
 
       {/* editmodel */}
@@ -2723,6 +3389,15 @@ function NewComponant() {
           </div>
         </div>
       )}
+
+
+
+
+
+
+
+
+
 
 
     </div>

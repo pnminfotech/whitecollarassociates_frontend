@@ -55,6 +55,13 @@ const LightbillOtherExpenses = () => {
   //   status:'',
   // });
 
+
+  const [rooms, setRooms] = useState([]);
+
+
+
+
+
   const [data, setData] = useState([]);
   const [newEntry, setNewEntry] = useState({
     type: "meter",
@@ -510,7 +517,8 @@ const LightbillOtherExpenses = () => {
       }
 
       const data = await response.json();
-      fetchLightBills(); // ✅ refresh UI
+      fetchData();
+      // ✅ refresh UI
 
     } catch (error) {
       console.error("Error updating light bill status:", error);
@@ -669,7 +677,7 @@ const LightbillOtherExpenses = () => {
 
 
       // Refresh data after update (replace with your method)
-      fetchLightBills(); // or update state manually
+      fetchData(); // or update state manually
     } catch (error) {
 
     }

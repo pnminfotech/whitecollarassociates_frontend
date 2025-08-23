@@ -766,205 +766,205 @@ export default LightbillMaintenace;
 
 
 // MainDashboard.jsx
-import React, { useEffect, useState } from 'react';
-import { FiBarChart2 } from 'react-icons/fi';
-import { MdOutlineBedroomParent, MdLightbulbOutline, MdOutlineReceiptLong } from 'react-icons/md';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { useNavigate } from 'react-router-dom';
+// import React, { useEffect, useState } from 'react';
+// import { FiBarChart2 } from 'react-icons/fi';
+// import { MdOutlineBedroomParent, MdLightbulbOutline, MdOutlineReceiptLong } from 'react-icons/md';
+// import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+// import { faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
+// import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+// import { useNavigate } from 'react-router-dom';
 
-const COLORS = ['#2563eb', '#facc15', '#10b981', '#ef4444', '#6366f1', '#1e3a8a'];
+// const COLORS = ['#2563eb', '#facc15', '#10b981', '#ef4444', '#6366f1', '#1e3a8a'];
 
-const MainDashboard = () => {
-  const navigate = useNavigate();
-  const [summary, setSummary] = useState({ rent: {}, beds: {}, light: {}, maintenance: {} });
-  const [currentTime, setCurrentTime] = useState(new Date());
+// const MainDashboard = () => {
+//   const navigate = useNavigate();
+//   const [summary, setSummary] = useState({ rent: {}, beds: {}, light: {}, maintenance: {} });
+//   const [currentTime, setCurrentTime] = useState(new Date());
 
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
+//   useEffect(() => {
+//     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+//     return () => clearInterval(timer);
+//   }, []);
 
-  useEffect(() => {
-    Promise.all([
-      fetch('http://localhost:5000/api/').then(res => res.json()),
-      fetch('http://localhost:5000/api/light-bill/all').then(res => res.json()),
-      fetch('http://localhost:5000/api/other-expense/all').then(res => res.json()),
-    ]).then(([tenants, lightBills, otherExpenses]) => {
-      const totalBeds = tenants.length;
-      const occupied = tenants.filter(t => !t.leaveDate).length;
-      const vacant = totalBeds - occupied;
-      const deposits = tenants.filter(t => Number(t.depositAmount) > 0).length;
+//   useEffect(() => {
+//     Promise.all([
+//       fetch('http://localhost:5000/api/').then(res => res.json()),
+//       fetch('http://localhost:5000/api/light-bill/all').then(res => res.json()),
+//       fetch('http://localhost:5000/api/other-expense/all').then(res => res.json()),
+//     ]).then(([tenants, lightBills, otherExpenses]) => {
+//       const totalBeds = tenants.length;
+//       const occupied = tenants.filter(t => !t.leaveDate).length;
+//       const vacant = totalBeds - occupied;
+//       const deposits = tenants.filter(t => Number(t.depositAmount) > 0).length;
 
-      const now = new Date();
-      const pendingRents = tenants.filter(t => {
-        const lastRent = t.rents?.[t.rents.length - 1];
-        if (!lastRent) return true;
-        const rentDate = new Date(lastRent.date);
-        return rentDate.getMonth() !== now.getMonth() || rentDate.getFullYear() !== now.getFullYear();
-      }).length;
+//       const now = new Date();
+//       const pendingRents = tenants.filter(t => {
+//         const lastRent = t.rents?.[t.rents.length - 1];
+//         if (!lastRent) return true;
+//         const rentDate = new Date(lastRent.date);
+//         return rentDate.getMonth() !== now.getMonth() || rentDate.getFullYear() !== now.getFullYear();
+//       }).length;
 
-      const totalLight = lightBills.reduce((sum, b) => sum + Number(b.amount || 0), 0);
-      const paidLight = lightBills.filter(b => b.status === 'paid').reduce((sum, b) => sum + Number(b.amount), 0);
-      const pendingLight = totalLight - paidLight;
+//       const totalLight = lightBills.reduce((sum, b) => sum + Number(b.amount || 0), 0);
+//       const paidLight = lightBills.filter(b => b.status === 'paid').reduce((sum, b) => sum + Number(b.amount), 0);
+//       const pendingLight = totalLight - paidLight;
 
-      const totalMaint = otherExpenses.reduce((sum, x) => sum + Number(x.mainAmount || 0), 0);
-      const paidMaint = otherExpenses.filter(x => x.status === 'paid').reduce((sum, x) => sum + Number(x.mainAmount), 0);
-      const pendingMaint = totalMaint - paidMaint;
+//       const totalMaint = otherExpenses.reduce((sum, x) => sum + Number(x.mainAmount || 0), 0);
+//       const paidMaint = otherExpenses.filter(x => x.status === 'paid').reduce((sum, x) => sum + Number(x.mainAmount), 0);
+//       const pendingMaint = totalMaint - paidMaint;
 
-      setSummary({
-        beds: { total: totalBeds, occupied, vacant },
-        rent: { pending: pendingRents, deposits },
-        light: { paid: paidLight, pending: pendingLight },
-        maintenance: { paid: paidMaint, pending: pendingMaint },
-      });
-    });
-  }, []);
+//       setSummary({
+//         beds: { total: totalBeds, occupied, vacant },
+//         rent: { pending: pendingRents, deposits },
+//         light: { paid: paidLight, pending: pendingLight },
+//         maintenance: { paid: paidMaint, pending: pendingMaint },
+//       });
+//     });
+//   }, []);
 
-  const handleNavigation = (path) => navigate(path);
-  const handleLogout = () => {
-    localStorage.removeItem("authToken");
-    navigate("/");
-  };
+//   const handleNavigation = (path) => navigate(path);
+//   const handleLogout = () => {
+//     localStorage.removeItem("authToken");
+//     navigate("/");
+//   };
 
-  const renderCard = (label, value) => (
-    <div className="col-sm-6 col-lg-3">
-      <div className="p-3 bg-white border rounded shadow-sm text-center">
-        <h6 className="text-muted mb-1">{label}</h6>
-        <h4 className="fw-bold text-primary">{value}</h4>
-      </div>
-    </div>
-  );
+//   const renderCard = (label, value) => (
+//     <div className="col-sm-6 col-lg-3">
+//       <div className="p-3 bg-white border rounded shadow-sm text-center">
+//         <h6 className="text-muted mb-1">{label}</h6>
+//         <h4 className="fw-bold text-primary">{value}</h4>
+//       </div>
+//     </div>
+//   );
 
-  const renderPie = (data, title) => (
-    <div className="bg-white rounded shadow-sm p-3" style={{ width: '100%', minHeight: 300 }}>
-      <h6 className="text-center text-muted mb-3">{title}</h6>
-      <ResponsiveContainer width="100%" height={220}>
-        <PieChart>
-          <Pie
-            data={data}
-            dataKey="value"
-            nameKey="name"
-            cx="50%"
-            cy="50%"
-            outerRadius={70}
-            innerRadius={40}
-            label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
-            labelLine={false}
-          >
-            {data.map((entry, idx) => (
-              <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
-            ))}
-          </Pie>
-          <Tooltip />
-          <Legend verticalAlign="bottom" height={36} />
-        </PieChart>
-      </ResponsiveContainer>
-    </div>
-  );
+//   const renderPie = (data, title) => (
+//     <div className="bg-white rounded shadow-sm p-3" style={{ width: '100%', minHeight: 300 }}>
+//       <h6 className="text-center text-muted mb-3">{title}</h6>
+//       <ResponsiveContainer width="100%" height={220}>
+//         <PieChart>
+//           <Pie
+//             data={data}
+//             dataKey="value"
+//             nameKey="name"
+//             cx="50%"
+//             cy="50%"
+//             outerRadius={70}
+//             innerRadius={40}
+//             label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+//             labelLine={false}
+//           >
+//             {data.map((entry, idx) => (
+//               <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
+//             ))}
+//           </Pie>
+//           <Tooltip />
+//           <Legend verticalAlign="bottom" height={36} />
+//         </PieChart>
+//       </ResponsiveContainer>
+//     </div>
+//   );
 
-  const renderBarChart = () => {
-    const totalLight = (summary.light.paid || 0) + (summary.light.pending || 0);
-    const totalMaint = (summary.maintenance.paid || 0) + (summary.maintenance.pending || 0);
-    const totalRent = (summary.rent.deposits || 0) + (summary.rent.pending || 0);
+//   const renderBarChart = () => {
+//     const totalLight = (summary.light.paid || 0) + (summary.light.pending || 0);
+//     const totalMaint = (summary.maintenance.paid || 0) + (summary.maintenance.pending || 0);
+//     const totalRent = (summary.rent.deposits || 0) + (summary.rent.pending || 0);
 
-    const getPercent = (value, total) => total ? (value / total) * 100 : 0;
+//     const getPercent = (value, total) => total ? (value / total) * 100 : 0;
 
-    const data = [
-      { name: 'Light', Paid: getPercent(summary.light.paid, totalLight), Pending: getPercent(summary.light.pending, totalLight) },
-      { name: 'Maintenance', Paid: getPercent(summary.maintenance.paid, totalMaint), Pending: getPercent(summary.maintenance.pending, totalMaint) },
-      { name: 'Rent', Paid: getPercent(summary.rent.deposits, totalRent), Pending: getPercent(summary.rent.pending, totalRent) },
-    ];
+//     const data = [
+//       { name: 'Light', Paid: getPercent(summary.light.paid, totalLight), Pending: getPercent(summary.light.pending, totalLight) },
+//       { name: 'Maintenance', Paid: getPercent(summary.maintenance.paid, totalMaint), Pending: getPercent(summary.maintenance.pending, totalMaint) },
+//       { name: 'Rent', Paid: getPercent(summary.rent.deposits, totalRent), Pending: getPercent(summary.rent.pending, totalRent) },
+//     ];
 
-    return (
-      <div className="bg-white rounded shadow-sm p-3">
-        <h6 className="text-center text-muted mb-3">Overall Payment Status</h6>
-        <ResponsiveContainer width="100%" height={250}>
-          <BarChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis domain={[0, 100]} tickFormatter={(val) => `${val.toFixed(0)}%`} />
-            <Tooltip formatter={(val) => `${val.toFixed(1)}%`} />
-            <Legend />
-            <Bar dataKey="Paid" fill="#10B981" />
-            <Bar dataKey="Pending" fill="#EF4444" />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    );
-  };
+//     return (
+//       <div className="bg-white rounded shadow-sm p-3">
+//         <h6 className="text-center text-muted mb-3">Overall Payment Status</h6>
+//         <ResponsiveContainer width="100%" height={250}>
+//           <BarChart data={data}>
+//             <CartesianGrid strokeDasharray="3 3" />
+//             <XAxis dataKey="name" />
+//             <YAxis domain={[0, 100]} tickFormatter={(val) => `${val.toFixed(0)}%`} />
+//             <Tooltip formatter={(val) => `${val.toFixed(1)}%`} />
+//             <Legend />
+//             <Bar dataKey="Paid" fill="#10B981" />
+//             <Bar dataKey="Pending" fill="#EF4444" />
+//           </BarChart>
+//         </ResponsiveContainer>
+//       </div>
+//     );
+//   };
 
-  const dayName = currentTime.toLocaleDateString(undefined, { weekday: 'long' });
-  const dateString = currentTime.toLocaleDateString();
-  const timeString = currentTime.toLocaleTimeString();
+//   const dayName = currentTime.toLocaleDateString(undefined, { weekday: 'long' });
+//   const dateString = currentTime.toLocaleDateString();
+//   const timeString = currentTime.toLocaleTimeString();
 
-  return (
-    <div className="d-flex" style={{ minHeight: '100vh', fontFamily: 'Inter, sans-serif' }}>
-      {/* Sidebar */}
-      <aside className="bg-primary text-white p-4" style={{ width: 250 }}>
-        <h4 className="text-center mb-4 fw-bold">🏨 Hostel Manager</h4>
-        <ul className="list-unstyled">
-          {[{ label: 'Dashboard', icon: <FiBarChart2 />, path: '/maindashboard' },
-          { label: 'Rent & Deposit', icon: <MdOutlineBedroomParent />, path: '/NewComponant' },
-          { label: 'Light Bill', icon: <MdLightbulbOutline />, path: '/lightbillmaintance' },
-          { label: 'Maintenance', icon: <MdOutlineReceiptLong />, path: '/lightbillmaintance' }]
-            .map(({ label, icon, path }) => (
-              <li key={label} className="mb-3" onClick={() => handleNavigation(path)} style={{ cursor: 'pointer' }}>
-                {icon} <span className="ms-2">{label}</span>
-              </li>
-            ))}
-          <li className="mt-3" onClick={handleLogout} style={{ cursor: 'pointer' }}>
-            <FontAwesomeIcon icon={faSignOutAlt} /> <span className="ms-2">Logout</span>
-          </li>
-        </ul>
-      </aside>
+//   return (
+//     <div className="d-flex" style={{ minHeight: '100vh', fontFamily: 'Inter, sans-serif' }}>
+//       {/* Sidebar */}
+//       <aside className="bg-primary text-white p-4" style={{ width: 250 }}>
+//         <h4 className="text-center mb-4 fw-bold">🏨 Hostel Manager</h4>
+//         <ul className="list-unstyled">
+//           {[{ label: 'Dashboard', icon: <FiBarChart2 />, path: '/maindashboard' },
+//           { label: 'Rent & Deposit', icon: <MdOutlineBedroomParent />, path: '/NewComponant' },
+//           { label: 'Light Bill', icon: <MdLightbulbOutline />, path: '/lightbillmaintance' },
+//           { label: 'Maintenance', icon: <MdOutlineReceiptLong />, path: '/lightbillmaintance' }]
+//             .map(({ label, icon, path }) => (
+//               <li key={label} className="mb-3" onClick={() => handleNavigation(path)} style={{ cursor: 'pointer' }}>
+//                 {icon} <span className="ms-2">{label}</span>
+//               </li>
+//             ))}
+//           <li className="mt-3" onClick={handleLogout} style={{ cursor: 'pointer' }}>
+//             <FontAwesomeIcon icon={faSignOutAlt} /> <span className="ms-2">Logout</span>
+//           </li>
+//         </ul>
+//       </aside>
 
-      {/* Main Content */}
-      <main className="flex-grow-1 p-4 bg-light" style={{ marginLeft: 250 }}>
-        <div className="mb-4 text-center">
-          <h3 className="text-primary fw-bold">Welcome Admin 👋</h3>
-          <p className="text-muted">{dayName}, {dateString} | {timeString}</p>
-        </div>
+//       {/* Main Content */}
+//       <main className="flex-grow-1 p-4 bg-light" style={{ marginLeft: 250 }}>
+//         <div className="mb-4 text-center">
+//           <h3 className="text-primary fw-bold">Welcome Admin 👋</h3>
+//           <p className="text-muted">{dayName}, {dateString} | {timeString}</p>
+//         </div>
 
-        {/* Summary Cards */}
-        <div className="row g-3 mb-4">
-          {renderCard('Total Beds', summary.beds.total || 0)}
-          {renderCard('Occupied', summary.beds.occupied || 0)}
-          {renderCard('Pending Rents', summary.rent.pending || 0)}
-          {renderCard('Deposits', summary.rent.deposits || 0)}
-        </div>
+//         {/* Summary Cards */}
+//         <div className="row g-3 mb-4">
+//           {renderCard('Total Beds', summary.beds.total || 0)}
+//           {renderCard('Occupied', summary.beds.occupied || 0)}
+//           {renderCard('Pending Rents', summary.rent.pending || 0)}
+//           {renderCard('Deposits', summary.rent.deposits || 0)}
+//         </div>
 
-        {/* Bar Chart */}
-        <div className="row mb-4">
-          <div className="col-12">{renderBarChart()}</div>
-        </div>
+//         {/* Bar Chart */}
+//         <div className="row mb-4">
+//           <div className="col-12">{renderBarChart()}</div>
+//         </div>
 
-        {/* Pie Charts */}
-        <div className="row g-3">
-          <div className="col-md-6 col-lg-3">{renderPie([
-            { name: 'Paid', value: summary.light.paid || 0 },
-            { name: 'Pending', value: summary.light.pending || 0 }
-          ], 'Light Bill')}</div>
+//         {/* Pie Charts */}
+//         <div className="row g-3">
+//           <div className="col-md-6 col-lg-3">{renderPie([
+//             { name: 'Paid', value: summary.light.paid || 0 },
+//             { name: 'Pending', value: summary.light.pending || 0 }
+//           ], 'Light Bill')}</div>
 
-          <div className="col-md-6 col-lg-3">{renderPie([
-            { name: 'Paid', value: summary.maintenance.paid || 0 },
-            { name: 'Pending', value: summary.maintenance.pending || 0 }
-          ], 'Maintenance')}</div>
+//           <div className="col-md-6 col-lg-3">{renderPie([
+//             { name: 'Paid', value: summary.maintenance.paid || 0 },
+//             { name: 'Pending', value: summary.maintenance.pending || 0 }
+//           ], 'Maintenance')}</div>
 
-          <div className="col-md-6 col-lg-3">{renderPie([
-            { name: 'Received', value: summary.rent.deposits || 0 },
-            { name: 'Pending', value: summary.rent.pending || 0 }
-          ], 'Rent')}</div>
+//           <div className="col-md-6 col-lg-3">{renderPie([
+//             { name: 'Received', value: summary.rent.deposits || 0 },
+//             { name: 'Pending', value: summary.rent.pending || 0 }
+//           ], 'Rent')}</div>
 
-          <div className="col-md-6 col-lg-3">{renderPie([
-            { name: 'Occupied', value: summary.beds.occupied || 0 },
-            { name: 'Vacant', value: summary.beds.vacant || 0 }
-          ], 'Bed Status')}</div>
-        </div>
-      </main>
-    </div>
-  );
-};
+//           <div className="col-md-6 col-lg-3">{renderPie([
+//             { name: 'Occupied', value: summary.beds.occupied || 0 },
+//             { name: 'Vacant', value: summary.beds.vacant || 0 }
+//           ], 'Bed Status')}</div>
+//         </div>
+//       </main>
+//     </div>
+//   );
+// };
 
-export default MainDashboard;
+// export default MainDashboard;
